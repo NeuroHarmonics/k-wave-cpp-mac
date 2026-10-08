@@ -32,8 +32,7 @@
 #ifndef OUTPUT_STREAMS_CUDA_KERNELS_H
 #define OUTPUT_STREAMS_CUDA_KERNELS_H
 
-#include <cuda.h>
-#include <cuda_runtime.h>
+#include <Utils/CudaTypes.h>
 
 #include <OutputStreams/BaseOutputStream.h>
 

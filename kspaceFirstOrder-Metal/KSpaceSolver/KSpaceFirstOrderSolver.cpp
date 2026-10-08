@@ -29,8 +29,8 @@
  * If not, see [http://www.gnu.org/licenses/](http://www.gnu.org/licenses/).
  */
 
-// Linux build
-#ifdef __linux__
+// Linux and macOS build
+#if defined(__linux__) || defined(__APPLE__)
   #include <sys/resource.h>
 #endif
 
@@ -53,6 +53,7 @@
 #include <KSpaceSolver/SolverCudaKernels.cuh>
 #include <Containers/MatrixContainer.h>
 #include <Logger/Logger.h>
+#include <Utils/MetalContext.h>
 
 using std::ios;
 /// Shortcut for Simulation dimensions.
@@ -176,14 +177,14 @@ KSpaceFirstOrderSolver::KSpaceFirstOrderSolver()
  */
 KSpaceFirstOrderSolver::~KSpaceFirstOrderSolver()
 {
-  // Delete CUDA FFT plans and related data
+  // Delete VkFFT plans and related data
   CufftComplexMatrix::destroyAllPlansAndStaticData();
 
   // Free memory
   freeMemory();
 
-  // Reset device after the run - recommended by CUDA SDK
-  cudaDeviceReset();
+  // Release the Metal device after the run
+  MetalContext::getInstance().reset();
 }// end of ~KSpaceFirstOrderSolver
 //----------------------------------------------------------------------------------------------------------------------
 
@@ -378,19 +379,6 @@ void KSpaceFirstOrderSolver::compute()
   Logger::log(Logger::LogLevel::kBasic, kOutFmtCurrentDeviceMemory, getDeviceMemoryUsage());
   Logger::log(Logger::LogLevel::kBasic, kOutFmtOutputFileUsage,     getFileUsage());
 
-  // CUDA block and thread sizes
-  const std::string blockDims = Logger::formatMessage(kOutFmtCudaGridShapeFormat,
-                                                      cudaParameters.getSolverGridSize1D(),
-                                                      cudaParameters.getSolverBlockSize1D());
-
-  Logger::log(Logger::LogLevel::kFull, kOutFmtCudaSolverGridShape, blockDims.c_str());
-
-  const std::string gridDims = Logger::formatMessage(kOutFmtCudaGridShapeFormat,
-                                                     cudaParameters.getSamplerGridSize1D(),
-                                                     cudaParameters.getSamplerBlockSize1D());
-
-  Logger::log(Logger::LogLevel::kFull, kOutFmtCudaSamplerGridShape, gridDims.c_str());
-
   // Main simulation loop
   try
   {
@@ -493,6 +481,14 @@ size_t KSpaceFirstOrderSolver::getHostMemoryUsage() const
     return memUsage.ru_maxrss >> 10;
   #endif
 
+  // macOS build (ru_maxrss is reported in bytes rather than kilobytes)
+  #ifdef __APPLE__
+    struct rusage memUsage;
+    getrusage(RUSAGE_SELF, &memUsage);
+
+    return memUsage.ru_maxrss >> 20;
+  #endif
+
   // Windows build
   #ifdef _WIN64
     HANDLE hProcess;
@@ -515,10 +511,7 @@ size_t KSpaceFirstOrderSolver::getHostMemoryUsage() const
  */
 size_t KSpaceFirstOrderSolver::getDeviceMemoryUsage() const
 {
-  size_t free, total;
-  cudaMemGetInfo(&free, &total);
-
-  return ((total - free) >> 20);
+  return (MetalContext::getInstance().getCurrentAllocatedSize() >> 20);
 }// end of getDeviceMemoryUsage
 //----------------------------------------------------------------------------------------------------------------------
 
@@ -647,7 +640,11 @@ void KSpaceFirstOrderSolver::printFullCodeNameAndLicense() const
   #ifdef __linux__
     Logger::log(Logger::LogLevel::kBasic, kOutFmtLinuxBuild);
   #elif __APPLE__
-    Logger::log(Logger::LogLevel::kBasic, kOutFmtMacOsBuild);
+    #if (defined(__aarch64__) || defined(__arm64__))
+      Logger::log(Logger::LogLevel::kBasic, kOutFmtMacOsArmBuild);
+    #else
+      Logger::log(Logger::LogLevel::kBasic, kOutFmtMacOsBuild);
+    #endif
   #elif _WIN32
     Logger::log(Logger::LogLevel::kBasic, kOutFmtWindowsBuild);
   #endif
@@ -655,6 +652,9 @@ void KSpaceFirstOrderSolver::printFullCodeNameAndLicense() const
   // Compiler detections
   #if (defined(__GNUC__) || defined(__GNUG__)) && !(defined(__clang__) || defined(__INTEL_COMPILER))
     Logger::log(Logger::LogLevel::kBasic, kOutFmtGnuCompiler, __VERSION__);
+  #endif
+  #ifdef __clang__
+    Logger::log(Logger::LogLevel::kBasic, kOutFmtClangCompiler, __clang_version__);
   #endif
   #ifdef __INTEL_COMPILER
     Logger::log(Logger::LogLevel::kBasic, kOutFmtIntelCompiler, __INTEL_COMPILER);
@@ -681,51 +681,26 @@ void KSpaceFirstOrderSolver::printFullCodeNameAndLicense() const
     Logger::log(Logger::LogLevel::kBasic, kOutFmtSSE3);
   #elif (defined (__SSE2__))
     Logger::log(Logger::LogLevel::kBasic, kOutFmtSSE2);
+  #elif (defined (__ARM_NEON))
+    Logger::log(Logger::LogLevel::kBasic, kOutFmtNeon);
   #endif
 
   Logger::log(Logger::LogLevel::kBasic, kOutFmtSeparator);
 
-  // CUDA detection
-  int cudaRuntimeVersion;
-  if (cudaRuntimeGetVersion(&cudaRuntimeVersion) != cudaSuccess)
-  {
-    Logger::log(Logger::LogLevel::kBasic, kOutFmtCudaRuntimeNA);
-  }
-  else
-  {
-    Logger::log(Logger::LogLevel::kBasic,
-                ((cudaRuntimeVersion / 1000) < 10) ? kOutFmtCudaRuntime : kOutFmtCudaRuntime10,
-                cudaRuntimeVersion / 1000, (cudaRuntimeVersion % 100) / 10);
-  }
-
-  int cudaDriverVersion;
-  cudaDriverGetVersion(&cudaDriverVersion);
-  Logger::log(Logger::LogLevel::kBasic,
-              ((cudaDriverVersion / 1000) < 10) ? kOutFmtCudaDriver : kOutFmtCudaDriver10,
-              cudaDriverVersion / 1000, (cudaDriverVersion % 100) / 10);
-
+  // GPU detection
   const CudaParameters& cudaParameters = mParameters.getCudaParameters();
   // No GPU was found
-  if (cudaParameters.getDeviceIdx() == CudaParameters::kDefaultDeviceIdx)
+  if (!MetalContext::getInstance().isInitialized())
   {
-    Logger::log(Logger::LogLevel::kBasic, kOutFmtCudaDeviceInfoNA);
+    Logger::log(Logger::LogLevel::kBasic, kOutFmtMetalDeviceNA);
   }
   else
   {
+    Logger::log(Logger::LogLevel::kBasic, kOutFmtMetalDeviceName, cudaParameters.getDeviceName().c_str());
+    Logger::log(Logger::LogLevel::kBasic, kOutFmtMetalFamily);
     Logger::log(Logger::LogLevel::kBasic,
-                kOutFmtCudaCodeArch,
-                SolverCudaKernels<>::getCudaCodeVersion() / 10.f);
-    Logger::log(Logger::LogLevel::kBasic, kOutFmtSeparator);
-    Logger::log(Logger::LogLevel::kBasic, kOutFmtCudaDevice, cudaParameters.getDeviceIdx());
-
-    Logger::log(Logger::LogLevel::kBasic,
-                kOutFmtCudaDeviceName,
-                cudaParameters.getDeviceName().c_str());
-
-    Logger::log(Logger::LogLevel::kBasic,
-                kOutFmtCudaCapability,
-                cudaParameters.getDeviceProperties().major,
-                cudaParameters.getDeviceProperties().minor);
+                kOutFmtMetalWorkingSet,
+                MetalContext::getInstance().getRecommendedMaxWorkingSetSize() >> 20);
   }
 
   // Print license
@@ -1089,6 +1064,9 @@ void KSpaceFirstOrderSolver::computeMainLoop()
     storeSensorData();
     printStatistics();
 
+    // Submit the GPU work of this time step
+    MetalContext::getInstance().commit();
+
     mParameters.incrementTimeIndex();
     mIsTimestepRightAfterRestore = false;
   }// Time loop
@@ -1099,6 +1077,9 @@ void KSpaceFirstOrderSolver::computeMainLoop()
   {
     mOutputStreamContainer.flushRawStreams();
   }
+
+  // Wait for the GPU, so the simulation time includes all time steps
+  MetalContext::getInstance().synchronize();
 }// end of computeMainLoop
 //----------------------------------------------------------------------------------------------------------------------
 

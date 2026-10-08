@@ -70,14 +70,6 @@ class SolverCudaKernels
     /// Destructor not allowed (static class).
     ~SolverCudaKernels() = delete;
 
-    /**
-     * @brief   Get the cuda architecture the code was compiled for.
-     * @details It is done by calling a kernel that reads a variable set by nvcc compiler.
-     *
-     * @return  The cuda code version the code was compiled for.
-     */
-    static int getCudaCodeVersion();
-
     //----------------------------------------- Compute pressure gradient --------------------------------------------//
     /**
      * @brief Compute spectral part of pressure gradient in between FFTs.

@@ -6,7 +6,8 @@
  *            Brno University of Technology \n
  *            jarosjir@fit.vutbr.cz
  *
- * @brief     The header file for the class for storing constants residing in CUDA constant memory.
+ * @brief     The header file for the class for storing constants residing in GPU constant memory. The Metal
+ *            kernels use a copy of this structure (Utils/CudaUtils.metal), keep both in sync.
  *
  * @version   kspaceFirstOrder 3.6
  *
@@ -42,7 +43,7 @@
 struct CudaDeviceConstants
 {
   /// Upload device constants into GPU memory.
-  __host__ void copyToDevice();
+  void copyToDevice();
 
   /// Is the simulation 2D or 3D.
   Parameters::SimulationDimension simulationDimension;

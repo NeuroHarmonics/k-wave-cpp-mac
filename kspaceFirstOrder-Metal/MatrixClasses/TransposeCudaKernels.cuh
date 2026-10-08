@@ -32,6 +32,8 @@
 #ifndef TRANSPOSE_CUDA_KERNELS_CUH
 #define TRANSPOSE_CUDA_KERNELS_CUH
 
+#include <Utils/CudaTypes.h>
+
 /**
  * @namespace TransposeCudaKernels
  * @brief     List of cuda kernels used for matrix transposition.

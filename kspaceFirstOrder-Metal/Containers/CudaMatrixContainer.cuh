@@ -6,7 +6,8 @@
  *            Brno University of Technology \n
  *            jarosjir@fit.vutbr.cz
  *
- * @brief     The header file defining the cuda matrix container used in cuda kernels.
+ * @brief     The header file defining the cuda matrix container used in cuda kernels. The Metal kernels read the
+ *            table of device pointers through their own definition of the container (Utils/CudaUtils.metal).
  *
  * @version   kspaceFirstOrder 3.6
  *
@@ -32,7 +33,7 @@
 #ifndef CUDA_MATRIX_CONTAINER_CUH
 #define CUDA_MATRIX_CONTAINER_CUH
 
-#include<cuComplex.h>
+#include <Utils/CudaTypes.h>
 
 #include <Containers/MatrixRecord.h>
 #include <Containers/MatrixContainer.h>
@@ -55,46 +56,18 @@ class CudaMatrixContainer
 {
  public:
     /// Default constructor.
-    __host__ CudaMatrixContainer();
+    CudaMatrixContainer();
 
     /**
      * @brief Copy matrix records (raw data pointers) inside this container on the host size.
      * @param [in] matrixIdx    - Identifier of the matrix.
      * @param [in] matrixRecord - Matrix record holding matrix type, data, etc.
      */
-    __host__ void copyMatrixRecord(const MatrixContainer::MatrixIdx matrixIdx,
-                                   const MatrixRecord&              matrixRecord);
+    void copyMatrixRecord(const MatrixContainer::MatrixIdx matrixIdx,
+                          const MatrixRecord&              matrixRecord);
 
     /// Upload container content into device constant memory.
-    __host__ void copyToDevice();
-
-    /**
-     * @brief  Return pointer to float matrix data.
-     * @param  [in] matrixIdx - Matrix index.
-     * @return Pointer to device data.
-     */
-    __device__ float* getRealData(MatrixContainer::MatrixIdx matrixIdx)
-    {
-      return mMatrixContainer[static_cast<int>(matrixIdx)].floatData;
-    };
-    /**
-     * @brief  Return pointer to complex matrix data.
-     * @param  [in] matrixIdx - Matrix index.
-     * @return Pointer to device data.
-     */
-    __device__ cuFloatComplex* getComplexData(MatrixContainer::MatrixIdx matrixIdx)
-    {
-      return mMatrixContainer[static_cast<int>(matrixIdx)].complexData;
-    };
-    /**
-     * @brief  Return pointer to index matrix data.
-     * @param  [in] matrixIdx - Matrix index.
-     * @return Pointer to device data.
-     */
-    __device__ size_t* getIndexData(MatrixContainer::MatrixIdx matrixIdx)
-    {
-      return mMatrixContainer[static_cast<int>(matrixIdx)].indexData;
-    };
+    void copyToDevice();
 
  private:
     /**

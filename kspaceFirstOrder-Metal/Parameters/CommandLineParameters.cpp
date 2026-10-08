@@ -29,8 +29,8 @@
  * If not, see [http://www.gnu.org/licenses/](http://www.gnu.org/licenses/).
  */
 
-// Linux build
-#ifdef __linux__
+// Linux and macOS build
+#if defined(__linux__) || defined(__APPLE__)
   #include <getopt.h>
 #endif
 
@@ -79,18 +79,18 @@ void CommandLineParameters::printComandlineParamers()
   Logger::log(Logger::LogLevel::kAdvanced, kOutFmtSeparator);
 
   // Shortcut to format file name
-  auto formatFileName = [](const string& fileName) -> string
+  auto formatFileName = [](const string& label, const string& fileName) -> string
   {
-    return Logger::wordWrapString(kOutFmtInputFile + fileName, kErrFmtPathDelimiters, 15).c_str();
+    return Logger::wordWrapString(label + fileName, kErrFmtPathDelimiters, 15).c_str();
   };// formatFileName
 
-  Logger::log(Logger::LogLevel::kAdvanced, formatFileName(mInputFileName));
+  Logger::log(Logger::LogLevel::kAdvanced, formatFileName(kOutFmtInputFile, mInputFileName));
 
-  Logger::log(Logger::LogLevel::kAdvanced, formatFileName(mOutputFileName));
+  Logger::log(Logger::LogLevel::kAdvanced, formatFileName(kOutFmtOutputFile, mOutputFileName));
 
   if (isCheckpointEnabled())
   {
-    Logger::log(Logger::LogLevel::kAdvanced, formatFileName(mCheckpointFileName));
+    Logger::log(Logger::LogLevel::kAdvanced, formatFileName(kOutFmtCheckpointFile, mCheckpointFileName));
   }
 
   Logger::log(Logger::LogLevel::kAdvanced, kOutFmtSeparator);

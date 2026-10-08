@@ -34,7 +34,7 @@
 #define CUBOID_OUTPUT_STREAM_H
 
 #include <vector>
-#include <cuda_runtime.h>
+#include <Utils/MetalContext.h>
 
 #include <OutputStreams/BaseOutputStream.h>
 
@@ -137,7 +137,7 @@ class CuboidOutputStream : public BaseOutputStream
     size_t mSampledTimeStep;
 
     /// Has the sampling finished?
-    cudaEvent_t mEventSamplingFinished;
+    MetalContext::Event mEventSamplingFinished;
 };// end of CuboidOutputStream
 //----------------------------------------------------------------------------------------------------------------------
 

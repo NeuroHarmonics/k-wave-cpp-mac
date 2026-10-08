@@ -35,7 +35,7 @@
 
 #include <memory>
 #include <iostream>
-#include <cuda_runtime.h>
+#include <stdexcept>
 
 #include <Logger/OutputMessages.h>
 #include <Logger/ErrorMessages.h>
@@ -184,56 +184,5 @@ class Logger
 };// Logger
 //----------------------------------------------------------------------------------------------------------------------
 
-
-//--------------------------------------------------------------------------------------------------------------------//
-//---------------------------------------------- Routines ------------------------------------------------------------//
-//--------------------------------------------------------------------------------------------------------------------//
-
-/**
- * @brief   Checks CUDA errors, create an error message and throw an exception.
- * @details Checks CUDA errors, create an error message and throw an exception. The template parameter should be set
- *          to true for the whole code when debugging kernel related errors. Setting it to true for production run will
- *          cause IO sampling and storing not to be overlapped.
- *
- * @tparam forceSynchronisation - Force CUDA device to synchronize with CPU.
- * @param [in] errorCode        - Error produced by a cuda routine.
- * @param [in] routineName      - Function where the error happened.
- * @param [in] fileName         - File where the error happened.
- * @param [in] lineNumber       - Line where the error happened.
- */
-template <bool forceSynchronisation = false>
-inline void checkErrors(const cudaError_t errorCode,
-                        const char*       routineName,
-                        const char*       fileName,
-                        const int         lineNumber)
-{
-  if (forceSynchronisation)
-  {
-    cudaDeviceSynchronize();
-  }
-
-  if (errorCode != cudaSuccess)
-  {
-    // Throw exception
-    throw std::runtime_error(Logger::formatMessage(kErrFmtDeviceError,
-                                                   cudaGetErrorString(errorCode),
-                                                   routineName,
-                                                   fileName,
-                                                   lineNumber));
-  }
-}// end of checkErrors
-//----------------------------------------------------------------------------------------------------------------------
-
-/**
- * @brief Macro checking cuda errors and printing the file name and line. Inspired by CUDA common
- *        checking routines.
- */
-#define cudaCheckErrors(val) checkErrors ( (val), #val, __FILE__, __LINE__ )
-
-/**
- * @brief Macro checking cuda errors and printing the file name and line. Inspired by CUDA common
- *        checking routines. No device synchronization.
- */
-#define cudaCheckErrorsNoSync(val) checkErrors<false> ( (val), #val, __FILE__, __LINE__ )
 
 #endif /* LOGGER_H */

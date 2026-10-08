@@ -52,10 +52,9 @@ IndexOutputStream::IndexOutputStream(Hdf5File&            file,
     mSensorMask(sensorMask),
     mDataset(H5I_BADID),
     mSampledTimeStep(0),
-    mEventSamplingFinished()
+    mEventSamplingFinished(nullptr)
 {
-  // Create event for sampling
-  cudaCheckErrors(cudaEventCreate(&mEventSamplingFinished));
+
 }// end of IndexOutputStream
 //----------------------------------------------------------------------------------------------------------------------
 
@@ -65,7 +64,7 @@ IndexOutputStream::IndexOutputStream(Hdf5File&            file,
 IndexOutputStream::~IndexOutputStream()
 {
   // Destroy sampling event
-  cudaCheckErrors(cudaEventDestroy(mEventSamplingFinished));
+  MetalContext::getInstance().destroyEvent(mEventSamplingFinished);
 
   close();
   // free memory
@@ -177,7 +176,7 @@ void IndexOutputStream::sample()
                                             mSensorMask.size());
 
       // Record an event when the data has been copied over.
-      cudaCheckErrors(cudaEventRecord(mEventSamplingFinished));
+      MetalContext::getInstance().recordEvent(mEventSamplingFinished);
 
       break;
     }
@@ -224,7 +223,7 @@ void IndexOutputStream::flushRaw()
   if (mReduceOp == ReduceOperator::kNone)
   {
     // Make sure the data has been copied from the GPU
-    cudaEventSynchronize(mEventSamplingFinished);
+    MetalContext::getInstance().synchronizeEvent(mEventSamplingFinished);
 
     // Only raw time series are flushed down to the disk every time step
     flushBufferToFile();

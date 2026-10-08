@@ -133,14 +133,6 @@ OutputMessage kOutFmtBuildNoDataTime
 
 
 /// Print version output message.
-OutputMessage kOutFmtCudaDeviceInfoNA
-  = "│ CUDA code arch:   N/A                                         │\n"
-    "├───────────────────────────────────────────────────────────────┤\n"
-    "│ CUDA device id:   N/A                                         │\n"
-    "│ CUDA device name: N/A                                         │\n"
-    "│ CUDA capability:  N/A                                         │\n";
-
-/// Print version output message.
 OutputMessage kOutFmtLicense
   = "├───────────────────────────────────────────────────────────────┤\n"
     "│ Contact email:    jarosjir@fit.vutbr.cz                       │\n"

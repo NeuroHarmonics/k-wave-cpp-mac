@@ -6,7 +6,8 @@
  *            Brno University of Technology \n
  *            jarosjir@fit.vutbr.cz
  *
- * @brief     The header file containing the class implementing various FFTs using the cuFFT interface.
+ * @brief     The header file containing the class implementing various FFTs using VkFFT (the cuFFT data layout is
+ *            kept).
  *
  * @version   kspaceFirstOrder 3.6
  *
@@ -32,15 +33,14 @@
 #ifndef CUFFT_COMPLEX_MATRIX_H
 #define CUFFT_COMPLEX_MATRIX_H
 
-#include <map>
-#include <cufft.h>
+#include <string>
 
 #include <MatrixClasses/ComplexMatrix.h>
 #include <Logger/ErrorMessages.h>
 
 /**
  * @class   CufftComplexMatrix
- * @brief   Class implementing ND and 1D Real-To-Complex and Complex-To-Real transforms using cuFFT interface.
+ * @brief   Class implementing ND and 1D Real-To-Complex and Complex-To-Real transforms using VkFFT (Metal backend).
  * @details Class implementing a single ND (3D, 2D) and many 1D Real-To-Complex and Complex-To-Real transforms
  *          using FFTW interface.
  * \li If the matrix is 3D, the ND transform is 3D and the batch of 1D goes over the second and third dimension.
@@ -66,20 +66,20 @@ class CufftComplexMatrix : public ComplexMatrix
     CufftComplexMatrix& operator=(const CufftComplexMatrix&) = delete;
 
     /**
-     * @brief Create cuFFT plan for 2D/3D Real-to-Complex transform.
+     * @brief Create VkFFT plan for 2D/3D Real-to-Complex transform.
      * @param [in] inMatrixDims  - The dimension sizes of the input matrix.
      * @throw std::runtime_error - If the plan can't be created.
      */
     static void createR2CFftPlanND(const DimensionSizes& inMatrixDims);
     /**
-     * @brief Create cuFFT plan for 2D/3D Complex-to-Real transform.
+     * @brief Create VkFFT plan for 2D/3D Complex-to-Real transform.
      * @param [in] outMatrixDims  - the dimension sizes of the output matrix.
      * @throw std::runtime_error  - If the plan can't be created.
      */
     static void createC2RFftPlanND(const DimensionSizes& outMatrixDims);
 
     /**
-     * @brief   Create cuFFT plan for 1DX Real-to-Complex transform.
+     * @brief   Create VkFFT plan for 1DX Real-to-Complex transform.
      * @details This version doesn't need any scratch place for planning. All 1D transforms are done in a
      *          single batch (no transpose needed) and in out-of-place manner.
      *
@@ -90,7 +90,7 @@ class CufftComplexMatrix : public ComplexMatrix
      */
     static void createR2CFftPlan1DX(const DimensionSizes& inMatrixDims);
     /**
-     * @brief   Create cuFFT plan for 1DY Real-to-Complex transform.
+     * @brief   Create VkFFT plan for 1DY Real-to-Complex transform.
      * @details This version doesn't need any scratch place for planning. All 1D transforms are done in a single
      *          batch. Data is transposed and padded according to the cuFFT data layout before the
      *          transform. The FFT is done in-place.
@@ -102,7 +102,7 @@ class CufftComplexMatrix : public ComplexMatrix
      */
     static void createR2CFftPlan1DY(const DimensionSizes& inMatrixDims);
     /**
-     * @brief   Create cuFFT plan for 1DZ Real-to-Complex transform.
+     * @brief   Create VkFFT plan for 1DZ Real-to-Complex transform.
      * @details This version doesn't need any scratch place for planning.  All 1D transforms are done in a single
      *          batch. Data has to be transposed and padded according to the cuFFT data layout before the
      *          transform. The FFT is done in-place.
@@ -115,7 +115,7 @@ class CufftComplexMatrix : public ComplexMatrix
     static void createR2CFftPlan1DZ(const DimensionSizes& inMatrixDims);
 
     /**
-     * @brief   Create cuFFT plan for 1DX Complex-to-Real transform.
+     * @brief   Create VkFFT plan for 1DX Complex-to-Real transform.
      * @details This version doesn't need any scratch place for planning.  All 1D transforms are done in a single
      *          batch. Data has to be transposed and padded according to the cuFFT data layout before the
      *          transform. The FFT is done in-place.
@@ -127,7 +127,7 @@ class CufftComplexMatrix : public ComplexMatrix
      */
     static void createC2RFftPlan1DX(const DimensionSizes& outMatrixDims);
     /**
-     * @brief   Create cuFFT plan for 1DY Complex-to-Real transform.
+     * @brief   Create VkFFT plan for 1DY Complex-to-Real transform.
      * @details This version doesn't need any scratch place for planning. All 1D transforms are done in a single
      *          batch. The output matrix is padded and transposed to be padded according to the cuFFT data layout.
      *
@@ -138,7 +138,7 @@ class CufftComplexMatrix : public ComplexMatrix
      */
     static void createC2RFftPlan1DY(const DimensionSizes& outMatrixDims);
     /**
-     * @brief   Create cuFFT plan for 1DZ Complex-to-Real transform.
+     * @brief   Create VkFFT plan for 1DZ Complex-to-Real transform.
      * @details This version doesn't need any scratch place for planning. All 1D transforms are done in a single
      *          batch. The output matrix has to be padded and transposed to be padded according to the cuFFT
      *          data layout.
@@ -237,37 +237,74 @@ class CufftComplexMatrix : public ComplexMatrix
     void computeC2RFft1DZ(RealMatrix& outMatrix);
 
   protected:
-    /// cufft plan for the ND Real-to-Complex transform.
-    static cufftHandle sR2CFftPlanND;
-    /// cufft plan for the ND Complex-to-Real transform.
-    static cufftHandle sC2RFftPlanND;
+    /// VkFFT application (plan) for one transform, defined in CufftComplexMatrix.cpp.
+    struct FftPlan;
 
-    /// cufft plan for the 1D Real-to-Complex transform in the x dimension.
-    static cufftHandle sR2CFftPlan1DX;
-    /// cufft plan for the 1D Real-to-Complex transform in the y dimension.
-    static cufftHandle sR2CFftPlan1DY;
-    /// cufft plan for the 1D Real-to-Complex transform in the z dimension.
-    static cufftHandle sR2CFftPlan1DZ;
+    /// VkFFT plan for the ND Real-to-Complex transform.
+    static FftPlan* sR2CFftPlanND;
+    /// VkFFT plan for the ND Complex-to-Real transform.
+    static FftPlan* sC2RFftPlanND;
 
-    /// cufft plan for the 1D Complex-to-Real transform in the x dimension.
-    static cufftHandle sC2RFftPlan1DX;
-    /// cufft plan for the 1D Complex-to-Real transform in the y dimension.
-    static cufftHandle sC2RFftPlan1DY;
-    /// cufft plan for the 1D Complex-to-Real transform in the z dimension.
-    static cufftHandle sC2RFftPlan1DZ;
+    /// VkFFT plan for the 1D Real-to-Complex transform in the x dimension.
+    static FftPlan* sR2CFftPlan1DX;
+    /// VkFFT plan for the 1D Real-to-Complex transform in the y dimension.
+    static FftPlan* sR2CFftPlan1DY;
+    /// VkFFT plan for the 1D Real-to-Complex transform in the z dimension.
+    static FftPlan* sR2CFftPlan1DZ;
+
+    /// VkFFT plan for the 1D Complex-to-Real transform in the x dimension.
+    static FftPlan* sC2RFftPlan1DX;
+    /// VkFFT plan for the 1D Complex-to-Real transform in the y dimension.
+    static FftPlan* sC2RFftPlan1DY;
+    /// VkFFT plan for the 1D Complex-to-Real transform in the z dimension.
+    static FftPlan* sC2RFftPlan1DZ;
 
   private:
     /**
-    * @brief Throw cuda FFT exception.
-    * @param [in] cufftError        - CUDA FFT error code.
-    * @param [in] transformTypeName - CUDA transform type name.
-    * @throw std::runtime_error with message corresponding to the cufft error code.
-    */
-    static void throwCufftException(const cufftResult  cufftError,
-                                    const std::string& transformTypeName);
+     * @brief Create a VkFFT plan.
+     *
+     * @param [in] fftDims           - Sizes of the transform (x is the transformed dimension of R2C).
+     * @param [in] transformDims     - Which dimensions are transformed (the others are batches).
+     * @param [in] outOfPlace        - Is the real data in its own buffer (true) or padded in place (false)?
+     * @param [in] inverse           - Create the inverse (Complex-to-Real) plan rather than the forward one.
+     * @param [in] transformTypeName - Transform type name for error messages.
+     * @return The plan.
+     * @throw std::runtime_error - If the plan can't be created.
+     */
+    static FftPlan* createPlan(const DimensionSizes& fftDims,
+                               const bool            transformDims[3],
+                               const bool            outOfPlace,
+                               const bool            inverse,
+                               const std::string&    transformTypeName);
 
-    /// Error messages for cufft error codes
-    static std::map<cufftResult, ErrorMessage> sCufftErrorMessages;
+    /**
+     * @brief Append the transform to the GPU work.
+     *
+     * @param [in] plan              - Plan to execute.
+     * @param [in] realData          - Device pointer to the real data (nullptr for in-place transforms).
+     * @param [in] complexData       - Device pointer to the complex data.
+     * @param [in] transformTypeName - Transform type name for error messages.
+     * @throw std::runtime_error - If the plan is not valid.
+     */
+    static void executePlan(FftPlan*           plan,
+                            const float*       realData,
+                            float*             complexData,
+                            const std::string& transformTypeName);
+
+    /**
+     * @brief Destroy a plan.
+     * @param [in, out] plan - Plan to destroy.
+     */
+    static void destroyPlan(FftPlan*& plan);
+
+    /**
+    * @brief Throw VkFFT exception.
+    * @param [in] vkfftError        - VkFFT error code.
+    * @param [in] transformTypeName - Transform type name.
+    * @throw std::runtime_error with message corresponding to the VkFFT error code.
+    */
+    static void throwVkFFTException(const int          vkfftError,
+                                    const std::string& transformTypeName);
 };// CufftComplexMatrix
 //----------------------------------------------------------------------------------------------------------------------
 #endif /* CUFFT_COMPLEX_MATRIX_H */

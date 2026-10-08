@@ -33,8 +33,8 @@
 #ifndef ERROR_MESSAGES_H
 #define ERROR_MESSAGES_H
 
-// Linux build.
-#ifdef __linux__
+// Linux and macOS build
+#if defined(__linux__) || defined(__APPLE__)
   #include <Logger/ErrorMessagesLinux.h>
 #endif
 
@@ -235,165 +235,88 @@ ErrorMessage kErrFmtOutputDimensionsMismatch
 ErrorMessage kErrFmtOutputAxisymmericMediumNotSupported
   = "Error: Axisymmetric medium is not supported by the GPU code.";
 
-//------------------------------------------------ CUDA FFT errors ---------------------------------------------------//
-/// CUDA FFT error message.
-ErrorMessage kErrFmtCufftInvalidPlan
-  = "Error: cuFFT was passed an invalid plan handle during %s";
-/// CUDA FFT error message.
-ErrorMessage kErrFmtCufftAllocFailed
-  = "Error: cuFFT failed to allocate GPU or CPU memory during %s";
-/// CUDA FFT error message.
-ErrorMessage kErrFmtCufftInvalidType
-  = "Error: cuFFT was given invalid type for of the transform during %s";
-/// CUDA FFT error message.
-ErrorMessage kErrFmtCufftInvalidValue
-  = "Error: cuFFT was given an invalid pointer or parameter during %s";
-/// CUDA FFT error message.
-ErrorMessage kErrFmtCuFFTInternalError
-  = "Error: Driver or internal cuFFT library error during %s";
-/// CUDA FFT error message.
-ErrorMessage kErrFmtCufftExecFailed
-  = "Error: Failed to execute a cuFFT transform during %s";
-/// CUDA FFT error message.
-ErrorMessage kErrFmtCufftSetupFailed
-  = "Error: The cuFFT library failed to initialize during %s";
-/// CUDA FFT error message.
-ErrorMessage kErrFmtCufftInvalidSize
-  = "Error: cuFFT was given an invalid transform size during %s";
-/// CUDA FFT error message.
-ErrorMessage kErrFmtCufftUnalignedData
-  = "Error: Arrays for cuFFT was not properly aligned during %s";
-/// CUDA FFT error message.
-ErrorMessage kErrFmtCufftIncompleteParaterList
-  = "Error: Missing parameters in the cuFFT call during %s";
-/// CUDA FFT error message.
-ErrorMessage kErrFmtCufftInvalidDevice
-  = "Error: cuFFT plan executed on a different GPU than created during %s";
-/// CUDA FFT error message.
-ErrorMessage kErrFmtCufftParseError
-  = "Error: cuFFT internal plan database error during %s";
-/// CUDA FFT error message.
-ErrorMessage kErrFmtCufftNoWorkspace
-  = "Error: No workspace has been provided prior to cuFFT plan execution during %s";
-/// CUDA FFT error message.
-ErrorMessage kErrFmtCufftNotImplemented
-  = "Error: cuFFT feature is not implemented during %s";
-/// CUDA FFT error message.
-ErrorMessage kErrFmtCufftLicenseError
-  = "Error: cuFFT license error during %s";
-/// CUDA FFT error message.
-ErrorMessage kErrFmtCufftNotSupported
-  = "Error: cuFFT operation is not supported for parameters given during %s";
-/// CUDA FFT error message.
-ErrorMessage kErrFmtCufftUnknownError
-  = "Error: cuFFT failed with unknown error during %s";
+//-------------------------------------------------- VkFFT errors ----------------------------------------------------//
+/// VkFFT error message.
+ErrorMessage kErrFmtVkFFTError
+  = "Error: VkFFT failed with error code %d during %s";
 
-/// CUDA FFT error message.
+/// VkFFT error message.
 ErrorMessage kErrFmtCreateR2CFftPlanND
   = "creating plan for ND real-to-complex FFT.";
-/// CUDA FFT error message.
+/// VkFFT error message.
 ErrorMessage kErrFmtCreateC2RFftPlanND
   = "creating plan for ND complex-to-real FFT.";
-/// CUDA FFT error message.
+/// VkFFT error message.
 ErrorMessage kErrFmtCreateR2CFftPlan1DX
   = "creating plan for 1D real-to-complex FFT in x direction.";
-/// CUDA FFT error message.
+/// VkFFT error message.
 ErrorMessage kErrFmtCreateR2CFftPlan1DY
   = "creating plan for 1D real-to-complex FFT in y direction.";
-/// CUDA FFT error message.
+/// VkFFT error message.
 ErrorMessage kErrFmtCreateR2CFftPlan1DZ
   = "creating plan for 1D real-to-complex FFT in z direction.";
-/// CUDA FFT error message.
+/// VkFFT error message.
 ErrorMessage kErrFmtCreateC2RFftPlan1DX
   = "creating plan for 1D complex-to-real FFT in x direction.";
-/// CUDA FFT error message.
+/// VkFFT error message.
 ErrorMessage kErrFmtCreateC2RFftPlan1DY
   = "creating plan for 1D complex-to-real FFT in y direction.";
-/// CUDA FFT error message.
+/// VkFFT error message.
 ErrorMessage kErrFmtCreateC2RFftPlan1DZ
   = "creating plan for 1D complex-to-real FFT in z direction.";
-/// CUDA FFT error message.
+/// VkFFT error message.
 ErrorMessage kErrFmtCannotCallR2CFftPlan1DZfor2D
   = "Error: Cannot call 1D real-to-complex FFT in z direction in 2D simulations.";
-/// CUDA FFT error message.
+/// VkFFT error message.
 ErrorMessage kErrFmtCannotCallC2RFftPlan1DZfor2D
   = "Error: Cannot call 1D complex-to-real FFT in z direction in 2D simulations.";
 
-/// CUDA FFT error message.
-ErrorMessage kErrFmtDestroyR2CFftPlanND
-  = "destroying plan for ND real-to-complex FFT.";
-/// CUDA FFT error message.
-ErrorMessage kErrFmtDestroyC2RFftPlanND
-  = "destroying plan for ND complex-to-real FFT.";
-/// CUDA FFT error message.
-ErrorMessage kErrFmtDestroyR2CFftPlan1DX
-  = "destroying plan for 1D real-to-complex FFT in x direction.";
-/// CUDA FFT error message.
-ErrorMessage kErrFmtDestroyR2CFftPlan1DY
-  = "destroying plan for 1D real-to-complex FFT in y direction.";
-/// CUDA FFT error message.
-ErrorMessage kErrFmtDestroyR2CFftPlan1DZ
-  = "destroying plan for 1D real-to-complex FFT in z direction.";
-/// CUDA FFT error message.
-ErrorMessage kErrFmtDestroyC2RFftPlan1DX
-  = "destroying plan for 1D complex-to-real FFT in x direction.";
-/// CUDA FFT error message.
-ErrorMessage kErrFmtDestroyC2RFftPlan1DY
-  = "destroying plan for 1D complex-to-real FFT in y direction.";
-/// CUDA FFT error message.
-ErrorMessage kErrFmtDestroyC2RFftPlan1DZ
-  = "destroying plan for 1D complex-to-real FFT in z direction.";
-
-/// CUDA FFT error message.
+/// VkFFT error message.
 ErrorMessage kErrFmtExecuteR2CFftPlanND
   = "executing ND real-to-complex FFT.";
-/// CUDA FFT error message.
+/// VkFFT error message.
 ErrorMessage kErrFmtExecuteC2RFftPlanND
   = "executing ND complex-to-real FFT.";
-/// CUDA FFT error message.
+/// VkFFT error message.
 ErrorMessage kErrFmtExecuteR2CFftPlan1DX
   = "executing 1D real-to-complex FFT in x direction.";
-/// CUDA FFT error message.
+/// VkFFT error message.
 ErrorMessage kErrFmtExecuteR2CFftPlan1DY
   = "executing 1D real-to-complex FFT in y direction.";
-/// CUDA FFT error message.
+/// VkFFT error message.
 ErrorMessage kErrFmtExecuteR2CFftPlan1DZ
   = "executing 1D real-to-complex FFT in z direction.";
-/// CUDA FFT error message.
+/// VkFFT error message.
 ErrorMessage kErrFmtExecuteC2RFftPlan1DX
   = "executing 1D complex-to-real FFT in x direction.";
-/// CUDA FFT error message.
+/// VkFFT error message.
 ErrorMessage kErrFmtExecuteC2RFftPlan1DY
   = "executing 1D complex-to-real FFT in y direction.";
-/// CUDA FFT error message.
+/// VkFFT error message.
 ErrorMessage kErrFmtExecuteC2RFftPlan1DZ
   = "executing 1D complex-to-real FFT in z direction.";
 
 //---------------------------------------------- CudaParameters Class ------------------------------------------------//
-/// CUDA parameters error message.
+/// GPU parameters error message.
 ErrorMessage kErrFmtBadDeviceIndex
-  = "Error: Wrong CUDA device id %d. Allowed devices <0, %d>.";
-/// CUDA parameters error message.
-ErrorMessage kErrFmtNoFreeDevice
-  = "Error: All CUDA-capable devices are busy or unavailable.";
-/// CUDA parameters error message.
-ErrorMessage kErrFmtDeviceIsBusy
-  = "Error: CUDA device id %d is busy or unavailable.";
+  = "Error: Wrong GPU device id %d. Allowed devices <0, %d>.";
+/// GPU parameters error message.
+ErrorMessage kErrFmtNoMetalDevice
+  = "Error: No GPU supporting Metal 3 was found. The code needs a Mac with Apple silicon or a Metal 3 capable GPU "
+    "and macOS 13 or newer.";
 
-/// CUDA parameters error message.
-ErrorMessage kErrFmtInsufficientCudaDriver
-  = "Error: Insufficient CUDA driver version. The code needs CUDA version "
-    "%d.%d but %d.%d is installed.";
-/// CUDA parameters error message.
-ErrorMessage kErrFmtCannotReadCudaVersion
-  = "Error: Insufficient CUDA driver version. Install the latest drivers.";
-/// CUDA parameters error message.
-ErrorMessage kErrFmtDeviceNotSupported
-  = "Error: CUDA device id %d is not supported by this k-Wave build.";
-
-//----------------------------------------------- CheckErrors header -------------------------------------------------//
-/// CUDA parameters error message
-ErrorMessage kErrFmtDeviceError
-  = "GPU error: %s routine name: %s in file %s, line %d.";
+//------------------------------------------------ MetalContext Class ------------------------------------------------//
+/// Metal error message.
+ErrorMessage kErrFmtMetalCompilation
+  = "Error: The GPU kernels cannot be compiled: %s";
+/// Metal error message.
+ErrorMessage kErrFmtMetalKernel
+  = "Error: The GPU kernel %s cannot be created: %s";
+/// Metal error message.
+ErrorMessage kErrFmtMetalExecution
+  = "Error: GPU execution failed: %s";
+/// Metal error message.
+ErrorMessage kErrFmtMetalBufferNotFound
+  = "Error: Invalid GPU memory address.";
 
 #endif /* ERROR_MESSAGES_H */

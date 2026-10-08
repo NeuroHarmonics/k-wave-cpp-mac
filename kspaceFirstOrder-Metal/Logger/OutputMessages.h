@@ -32,8 +32,8 @@
 #ifndef OUTPUT_MESSAGES_H
 #define OUTPUT_MESSAGES_H
 
-// Linux build
-#ifdef __linux__
+// Linux and macOS build
+#if defined(__linux__) || defined(__APPLE__)
   #include <Logger/OutputMessagesLinux.h>
 #endif
 
@@ -56,10 +56,10 @@ OutputMessage kOutFmtFailed
 //------------------------------------------------- Common outputs ---------------------------------------------------//
 /// Output message.
 OutputMessage kOutFmtCodeName
-  = kOutFmtVerticalLine + "                  %s                   " + kOutFmtEol;
+  = kOutFmtVerticalLine + "                  %s                  " + kOutFmtEol;
 /// Output message.
 OutputMessage kOutFmtKWaveVersion
-  = "kspaceFirstOrder-CUDA v1.3";
+  = "kspaceFirstOrder-Metal v1.3";
 
 /// Output message.
 OutputMessage kOutFmtGitHashLeft
@@ -143,16 +143,6 @@ OutputMessage kOutFmtCurrentDeviceMemory
 OutputMessage kOutFmtOutputFileUsage
   = kOutFmtVerticalLine + " Expected output file size:                        %9luMB " + kOutFmtEol;
 
-/// Output message.
-OutputMessage kOutFmtCudaGridShapeFormat
-  = "%d x %d";
-/// Output message.
-OutputMessage kOutFmtCudaSolverGridShape
-  = kOutFmtVerticalLine + " CUDA solver grid size [blocks x threads]: %19s " + kOutFmtEol;
-/// Output message.
-OutputMessage kOutFmtCudaSamplerGridShape
-  = kOutFmtVerticalLine + " CUDA sampler grid size [blocks x threads]: %18s " + kOutFmtEol;
-
 /// Output message
 OutputMessage kOutFmtCheckpointCompletedTimeSteps
   = kOutFmtVerticalLine + " Number of time steps completed:                    %10u " + kOutFmtEol;
@@ -230,10 +220,16 @@ OutputMessage kOutFmtWindowsBuild
 /// Print version output message.
 OutputMessage kOutFmtMacOsBuild
   = kOutFmtVerticalLine + " Operating system: Mac OS X x64                                " + kOutFmtEol;
+/// Print version output message.
+OutputMessage kOutFmtMacOsArmBuild
+  = kOutFmtVerticalLine + " Operating system: macOS arm64                                 " + kOutFmtEol;
 
 /// Print version output message.
 OutputMessage kOutFmtGnuCompiler
   = kOutFmtVerticalLine + " Compiler name:    GNU C++ %.19s                               " + kOutFmtEol;
+/// Print version output message.
+OutputMessage kOutFmtClangCompiler
+  = kOutFmtVerticalLine + " Compiler name:    Clang %-38.38s" + kOutFmtEol;
 /// Print version output message.
 OutputMessage kOutFmtIntelCompiler
   = kOutFmtVerticalLine + " Compiler name:    Intel C++ %d                              " + kOutFmtEol;
@@ -262,35 +258,22 @@ OutputMessage kOutFmtSSE3
 /// Print version output message.
 OutputMessage kOutFmtSSE2
   = kOutFmtVerticalLine + " Instruction set:  Intel SSE 2                                 " + kOutFmtEol;
+/// Print version output message.
+OutputMessage kOutFmtNeon
+  = kOutFmtVerticalLine + " Instruction set:  Arm NEON                                    " + kOutFmtEol;
 
 /// Print version output message.
-OutputMessage kOutFmtCudaRuntimeNA
-  = kOutFmtVerticalLine + " CUDA runtime:     N/A                                         " + kOutFmtEol;
+OutputMessage kOutFmtMetalDeviceNA
+  = kOutFmtVerticalLine + " GPU device:       N/A                                         " + kOutFmtEol;
 /// Print version output message.
-OutputMessage kOutFmtCudaRuntime
-  = kOutFmtVerticalLine + " CUDA runtime:     %d.%d                                         " + kOutFmtEol;
+OutputMessage kOutFmtMetalDeviceName
+  = kOutFmtVerticalLine + " GPU device name:  %-43.43s " + kOutFmtEol;
 /// Print version output message.
-OutputMessage kOutFmtCudaRuntime10
-  = kOutFmtVerticalLine + " CUDA runtime:     %d.%d                                        " + kOutFmtEol;
+OutputMessage kOutFmtMetalFamily
+  = kOutFmtVerticalLine + " GPU support:      Metal 3                                     " + kOutFmtEol;
 /// Print version output message.
-OutputMessage kOutFmtCudaDriver
-  = kOutFmtVerticalLine + " CUDA driver:      %d.%d                                         " + kOutFmtEol;
-/// Print version output message.
-OutputMessage kOutFmtCudaDriver10
-  = kOutFmtVerticalLine + " CUDA driver:      %d.%d                                        " + kOutFmtEol;
-
-/// Print version output message.
-OutputMessage kOutFmtCudaCodeArch
-  = kOutFmtVerticalLine + " CUDA code arch:   %1.1f                                         " + kOutFmtEol;
-/// Print version output message.
-OutputMessage kOutFmtCudaDevice
-  = kOutFmtVerticalLine + " CUDA device id:   %d                                           " + kOutFmtEol;
-/// Print version output message.
-OutputMessage kOutFmtCudaDeviceName
-  = kOutFmtVerticalLine + " CUDA device name: %-43.43s " + kOutFmtEol;
-/// Print version output message.
-OutputMessage kOutFmtCudaCapability
-  = kOutFmtVerticalLine + " CUDA capability:  %d.%d                                         " + kOutFmtEol;
+OutputMessage kOutFmtMetalWorkingSet
+  = kOutFmtVerticalLine + " GPU working set:  %-6lu MB                                   " + kOutFmtEol;
 
 //--------------------------------------------------- Medium types ---------------------------------------------------//
 /// Output message - medium type.

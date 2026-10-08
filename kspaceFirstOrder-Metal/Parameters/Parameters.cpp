@@ -42,6 +42,11 @@
   #include <windows.h>
 #endif
 
+// macOS build
+#ifdef __APPLE__
+  #include <sys/sysctl.h>
+#endif
+
 #include <exception>
 #include <stdexcept>
 #include <limits>
@@ -688,6 +693,19 @@ void Parameters::selectDevice()
 std::string Parameters::getProcessorName() const
 {
   std::string processorName = "";
+
+  // macOS build - the brand string is provided by sysctl on both Intel and Apple silicon
+  #ifdef __APPLE__
+    char brandString[256] = "";
+    size_t brandStringSize = sizeof(brandString);
+
+    if (sysctlbyname("machdep.cpu.brand_string", brandString, &brandStringSize, nullptr, 0) == 0)
+    {
+      processorName = brandString;
+    }
+
+    return processorName;
+  #endif
 
   // Processor registry
   using ProcessorRegistry = unsigned int[4];

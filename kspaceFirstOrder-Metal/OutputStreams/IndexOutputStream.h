@@ -32,7 +32,7 @@
 #ifndef INDEX_OUTPUT_STREAM_H
 #define INDEX_OUTPUT_STREAM_H
 
-#include <cuda_runtime.h>
+#include <Utils/MetalContext.h>
 
 #include <OutputStreams/BaseOutputStream.h>
 
@@ -113,7 +113,7 @@ class IndexOutputStream : public BaseOutputStream
     size_t mSampledTimeStep;
 
     /// Has the sampling finished?
-    cudaEvent_t mEventSamplingFinished;
+    MetalContext::Event mEventSamplingFinished;
 };// end of IndexOutputStream
 //----------------------------------------------------------------------------------------------------------------------
 

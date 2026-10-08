@@ -1,5 +1,5 @@
 /**
- * @file      CudaMatrixContainer.cu
+ * @file      CudaMatrixContainer.cpp
  *
  * @author    Jiri Jaros \n
  *            Faculty of Information Technology \n
@@ -36,24 +36,7 @@
 
 #include <Containers/CudaMatrixContainer.cuh>
 #include <Logger/Logger.h>
-
-//--------------------------------------------------------------------------------------------------------------------//
-//---------------------------------------------------- Constants -----------------------------------------------------//
-//--------------------------------------------------------------------------------------------------------------------//
-
-// Forward declaration for the compiler to generate necessary template.
-template class CudaMatrixContainer<MatrixContainer::getMatrixIdxCount()>;
-
-//--------------------------------------------------------------------------------------------------------------------//
-//---------------------------------------------------- Variables -----------------------------------------------------//
-//--------------------------------------------------------------------------------------------------------------------//
-
-/**
- * @var      cudaMatrixContainer
- * @brief    This variable holds pointer data to device matrices present in MatrixContainer.
- * @details  This variable is imported as extern into other CUDA units.
- */
-__constant__ CudaMatrixContainer<MatrixContainer::getMatrixIdxCount()> cudaMatrixContainer;
+#include <Utils/MetalContext.h>
 
 //--------------------------------------------------------------------------------------------------------------------//
 //------------------------------------------------- Public methods ---------------------------------------------------//
@@ -63,15 +46,12 @@ __constant__ CudaMatrixContainer<MatrixContainer::getMatrixIdxCount()> cudaMatri
  * Default constructor clearing the container on the host side.
  */
 template<size_t size>
-__host__ CudaMatrixContainer<size>::CudaMatrixContainer()
+CudaMatrixContainer<size>::CudaMatrixContainer()
 {
-  // Data is cleared only on the host size
-  #ifndef  __CUDA_ARCH__
-    for (size_t i = 0; i < size; i++)
-    {
-      mMatrixContainer[i].floatData = nullptr;
-    }
-  #endif
+  for (size_t i = 0; i < size; i++)
+  {
+    mMatrixContainer[i].floatData = nullptr;
+  }
 }// end of default constructor.
 //----------------------------------------------------------------------------------------------------------------------
 
@@ -79,8 +59,8 @@ __host__ CudaMatrixContainer<size>::CudaMatrixContainer()
   * Copy matrix records (raw data pointers) inside this container on the host size.
   */
 template<size_t size>
-__host__ void CudaMatrixContainer<size>::copyMatrixRecord(const MatrixContainer::MatrixIdx matrixIdx,
-                                                          const MatrixRecord&              matrixRecord)
+void CudaMatrixContainer<size>::copyMatrixRecord(const MatrixContainer::MatrixIdx matrixIdx,
+                                                 const MatrixRecord&              matrixRecord)
 {
   using MT = MatrixRecord::MatrixType;
 
@@ -124,11 +104,18 @@ __host__ void CudaMatrixContainer<size>::copyMatrixRecord(const MatrixContainer:
 //----------------------------------------------------------------------------------------------------------------------
 
 /**
- * Copy the structure with simulation constants to the CUDA constant memory.
+ * Copy the device pointers to the buffer bound to every kernel as cudaMatrixContainer.
  */
 template<size_t size>
-__host__ void CudaMatrixContainer<size>::copyToDevice()
+void CudaMatrixContainer<size>::copyToDevice()
 {
-  cudaCheckErrors(cudaMemcpyToSymbol(cudaMatrixContainer, this, sizeof(cudaMatrixContainer)));
+  MetalContext::getInstance().setMatrixContainer(mMatrixContainer, sizeof(mMatrixContainer));
 }// end of copyToDevice
 //----------------------------------------------------------------------------------------------------------------------
+
+//--------------------------------------------------------------------------------------------------------------------//
+//---------------------------------------------------- Constants -----------------------------------------------------//
+//--------------------------------------------------------------------------------------------------------------------//
+
+// Explicit instantiation for the compiler to generate necessary template, after all members have been defined.
+template class CudaMatrixContainer<MatrixContainer::getMatrixIdxCount()>;

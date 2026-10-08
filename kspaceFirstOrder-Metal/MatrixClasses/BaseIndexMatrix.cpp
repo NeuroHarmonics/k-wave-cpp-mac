@@ -29,10 +29,9 @@
  * If not, see [http://www.gnu.org/licenses/](http://www.gnu.org/licenses/).
  */
 
-#include <immintrin.h>
-
 #include <MatrixClasses/BaseIndexMatrix.h>
 #include <Utils/DimensionSizes.h>
+#include <Utils/MetalContext.h>
 #include <Logger/Logger.h>
 
 //--------------------------------------------------------------------------------------------------------------------//
@@ -69,19 +68,21 @@ void BaseIndexMatrix::zeroMatrix()
 
 /**
  * Copy data from host -> device (CPU -> GPU).
+ * The host and device data share the same memory, so there is nothing to copy.
  */
 void BaseIndexMatrix::copyToDevice()
 {
-  cudaCheckErrors(cudaMemcpy(mDeviceData, mHostData, mCapacity * sizeof(size_t), cudaMemcpyHostToDevice));
+
 }// end of copyToDevice
 //----------------------------------------------------------------------------------------------------------------------
 
 /**
  * Copy data from device-> host (GPU -> CPU).
+ * The host and device data share the same memory, so it is enough to wait until the GPU has finished.
  */
 void BaseIndexMatrix::copyFromDevice()
 {
-  cudaCheckErrors(cudaMemcpy(mHostData, mDeviceData, mCapacity * sizeof(size_t), cudaMemcpyDeviceToHost));
+  MetalContext::getInstance().synchronize();
 }// end of copyFromDevice
 //----------------------------------------------------------------------------------------------------------------------
 
@@ -92,25 +93,19 @@ void BaseIndexMatrix::copyFromDevice()
 /**
  * Memory allocation based on the capacity. \n
  *
- * CPU memory is aligned at kDataAlignment, registered as pinned CUDA memory and zeroed.
- * The GPU memory is allocated on GPU but not zeroed (no reason).
+ * The memory is a Metal buffer shared by the CPU and the GPU (page aligned).
  */
 void BaseIndexMatrix::allocateMemory()
 {
   // Size of memory to allocate
   size_t sizeInBytes = mCapacity * sizeof(size_t);
 
-  mHostData = static_cast<size_t*>(_mm_malloc(sizeInBytes, kDataAlignment));
+  // Allocate memory shared by the CPU and the GPU
+  void* hostData = nullptr;
+  mDeviceData = static_cast<size_t*>(MetalContext::getInstance().allocate(sizeInBytes, hostData));
+  mHostData   = static_cast<size_t*>(hostData);
 
-  if (!mHostData)
-  {
-    throw std::bad_alloc();
-  }
-
-  // Register Host memory (pin in memory)
-  cudaCheckErrors(cudaHostRegister(mHostData, sizeInBytes, cudaHostRegisterPortable));
-
-  if ((cudaMalloc<size_t>(&mDeviceData, sizeInBytes) != cudaSuccess) || (!mDeviceData))
+  if ((!mDeviceData) || (!mHostData))
   {
     throw std::bad_alloc();
   }
@@ -122,18 +117,12 @@ void BaseIndexMatrix::allocateMemory()
  */
 void BaseIndexMatrix::freeMemory()
 {
-  if (mHostData)
-  {
-    cudaHostUnregister(mHostData);
-    _mm_free(mHostData);
-  }
-  mHostData = nullptr;
-
-  // Free GPU memory
+  // Free memory shared by the CPU and the GPU
   if (mDeviceData)
   {
-    cudaCheckErrors(cudaFree(mDeviceData));
+    MetalContext::getInstance().deallocate(mDeviceData);
   }
+  mHostData   = nullptr;
   mDeviceData = nullptr;
 }// end of freeMemory
 //----------------------------------------------------------------------------------------------------------------------

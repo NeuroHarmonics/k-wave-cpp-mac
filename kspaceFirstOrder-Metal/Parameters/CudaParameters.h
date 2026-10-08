@@ -6,7 +6,7 @@
  *            Brno University of Technology \n
  *            jarosjir@fit.vutbr.cz
  *
- * @brief     The header file for the class for setting CUDA kernel parameters.
+ * @brief     The header file for the class for setting GPU kernel parameters (Metal port).
  *
  * @version   kspaceFirstOrder 3.6
  *
@@ -32,14 +32,15 @@
 #ifndef CUDA_PARAMETERS_H
 #define CUDA_PARAMETERS_H
 
-#include <cuda_runtime.h>
+#include <string>
 
 #include <Utils/DimensionSizes.h>
+#include <Utils/CudaTypes.h>
 
 /**
  * @class   CudaParameters
- * @brief   Class responsible for CUDA runtime setup.
- * @details Class responsible for selecting a CUDA device, block and grid dimensions, etc. \n
+ * @brief   Class responsible for GPU runtime setup.
+ * @details Class responsible for selecting a Metal device, block and grid dimensions, etc. \n
  *          The class can only be constructed from inside Parameters and there mustn't be more
  *          than 1 instance in the code.
  */
@@ -64,17 +65,6 @@ class CudaParameters
     int getDeviceIdx()                 const { return mDeviceIdx; }
 
     /**
-     * @brief  Get number of threads for 1D block used by kSpaceSolver.
-     * @return Number of threads per block.
-     */
-    int getSolverBlockSize1D()         const { return mSolverBlockSize1D; }
-    /**
-     * @brief  Get number of block for 1D grid used by kSpaceSolver.
-     * @return Number of blocks per grid.
-     */
-    int getSolverGridSize1D()          const { return mSolverGridSize1D; }
-
-    /**
      * @brief  Get block size for the transposition kernels.
      * @return Number of threads per block.
      */
@@ -86,30 +76,17 @@ class CudaParameters
     dim3 getSolverTransposeGirdSize()  const { return mSolverTransposeGirdSize; }
 
     /**
-     * @brief  Get number of threads for the 1D data sampling kernels.
-     * @return Number of threads per block.
-     */
-    int getSamplerBlockSize1D()        const { return mSamplerBlockSize1D; }
-    /**
-     * @brief  Get Number of blocks for the 1D data sampling kernels.
-     * @return Number of blocks per grid.
-     */
-    int getSamplerGridSize1D()         const { return mSamplerGridSize1D; }
-
-    /**
      * @brief  Get the name of the device being used.
-     * @return Name of the GPU card being used, e.g., GeForce GTX 980 or "N/A".
+     * @return Name of the GPU being used, e.g., Apple M3 Pro or "N/A".
      */
     std::string getDeviceName()        const;
 
     /**
-     * @brief Select cuda device for execution.
-     * @param [in] deviceIdx     - Device to acquire, default is the first free.
+     * @brief Select Metal device for execution.
+     * @param [in] deviceIdx     - Device to acquire, default is the system default device.
      *
-     * @throw std::runtime_error - If there is no free CUDA devices.
      * @throw std::runtime_error - If there is no device of such and deviceIdx.
-     * @throw std::runtime_error - If the GPU chosen is not supported (i.e., the code was not compiled for its
-     *                             architecture).
+     * @throw std::runtime_error - If the GPU chosen does not support Metal 3 or the kernels cannot be compiled.
      */
     void selectDevice(const int deviceIdx = kDefaultDeviceIdx);
 
@@ -118,12 +95,6 @@ class CudaParameters
 
     /// Upload useful simulation constants into device constant memory.
     void setUpDeviceConstants()                 const;
-
-    /**
-     * @brief  Return properties of the GPU being used.
-     * @return Structure holding the properties of GPU being used.
-     */
-    const cudaDeviceProp& getDeviceProperties() const { return mDeviceProperties; };
 
     /// Default device Index - no default GPU.
     static constexpr int kDefaultDeviceIdx = -1;
@@ -134,41 +105,16 @@ class CudaParameters
     /// Default constructor - only friend class can create an instance.
     CudaParameters();
 
-    /**
-     * @brief Check whether the CUDA driver version installed is sufficient for the code.
-     * @throw std::runtime_error if the CUDA driver is too old.
-     */
-    void checkCudaVersion();
-
-    /**
-     * @brief  Check whether the code was compiled for a given SM model.
-     * @return true - if we can run the code, the minimum SM model is 3.0 (Kepler).
-     */
-    bool checkCudaCodeVersion();
-
     /// Undefined block or grid size.
     static constexpr int kUndefinedSize = -1;
 
     /// Index of the device the code is being run on.
     int  mDeviceIdx;
 
-    /// Number of threads for 1D block used by kSpaceSolver.
-    int  mSolverBlockSize1D;
-    /// Number of block for 1D grid used by kSpaceSolver.
-    int  mSolverGridSize1D;
-
     /// Block size for the transposition kernels.
     dim3 mSolverTransposeBlockSize;
     /// Grid size for the transposition kernels.
     dim3 mSolverTransposeGirdSize;
-
-    /// Number of threads for the 1D data sampling kernels.
-    int  mSamplerBlockSize1D;
-    /// Number of blocks for the 1D data sampling kernels.
-    int  mSamplerGridSize1D;
-
-    /// Device properties of the selected GPU.
-    cudaDeviceProp mDeviceProperties;
 };// end of CudaParameters
 //----------------------------------------------------------------------------------------------------------------------
 

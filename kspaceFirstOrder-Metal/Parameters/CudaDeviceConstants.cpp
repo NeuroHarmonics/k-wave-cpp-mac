@@ -1,12 +1,12 @@
 /**
- * @file      CudaDeviceConstants.cu
+ * @file      CudaDeviceConstants.cpp
  *
  * @author    Jiri Jaros \n
  *            Faculty of Information Technology \n
  *            Brno University of Technology \n
  *            jarosjir@fit.vutbr.cz
  *
- * @brief     The implementation file for the class for storing constants residing in CUDA constant memory.
+ * @brief     The implementation file for the class for storing constants residing in GPU constant memory.
  *
  * @version   kspaceFirstOrder 3.6
  *
@@ -31,30 +31,17 @@
 
 #include <Parameters/CudaDeviceConstants.cuh>
 #include <Logger/Logger.h>
-
-//--------------------------------------------------------------------------------------------------------------------//
-//---------------------------------------------------- Variables -----------------------------------------------------//
-//--------------------------------------------------------------------------------------------------------------------//
-
-/**
- * @var      cudaDeviceConstants
- * @brief    This variable holds basic simulation constants for GPU.
- * @details  This variable holds necessary simulation constants in the CUDA GPU. memory.
- *           This variable is imported as extern into other CUDA units.
- */
-__constant__ CudaDeviceConstants cudaDeviceConstants;
-
-
+#include <Utils/MetalContext.h>
 
 //--------------------------------------------------------------------------------------------------------------------//
 //------------------------------------------------- Public methods ---------------------------------------------------//
 //--------------------------------------------------------------------------------------------------------------------//
 
 /**
- * Copy the structure with simulation constants to the CUDA constant memory.
+ * Copy the structure with simulation constants to the buffer bound to every kernel as cudaDeviceConstants.
  */
-__host__ void CudaDeviceConstants::copyToDevice()
+void CudaDeviceConstants::copyToDevice()
 {
-  cudaCheckErrors(cudaMemcpyToSymbol(cudaDeviceConstants, this, sizeof(CudaDeviceConstants)));
+  MetalContext::getInstance().setDeviceConstants(this, sizeof(CudaDeviceConstants));
 }// end of copyToDevice
 //----------------------------------------------------------------------------------------------------------------------

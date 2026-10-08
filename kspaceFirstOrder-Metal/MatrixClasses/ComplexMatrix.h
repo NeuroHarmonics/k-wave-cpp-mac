@@ -33,7 +33,7 @@
 #define COMPLEX_MATRIX_H
 
 #include <complex>
-#include <cuComplex.h>
+#include <Utils/CudaTypes.h>
 
 #include <MatrixClasses/BaseFloatMatrix.h>
 #include <MatrixClasses/RealMatrix.h>

@@ -29,10 +29,9 @@
  * If not, see [http://www.gnu.org/licenses/](http://www.gnu.org/licenses/).
  */
 
-#include <immintrin.h>
-
 #include <MatrixClasses/BaseFloatMatrix.h>
 #include <Utils/DimensionSizes.h>
+#include <Utils/MetalContext.h>
 #include <Logger/Logger.h>
 
 //--------------------------------------------------------------------------------------------------------------------//
@@ -73,7 +72,7 @@ void BaseFloatMatrix::zeroMatrix()
  */
 void BaseFloatMatrix::zeroDeviceMatrix()
 {
-  cudaCheckErrors(cudaMemset(mDeviceData, 0, mCapacity * sizeof(float)));
+  MetalContext::getInstance().memset(mDeviceData, 0, mCapacity * sizeof(float));
 }// end of zeroDeviceMatrix
 //----------------------------------------------------------------------------------------------------------------------
 
@@ -92,21 +91,21 @@ void BaseFloatMatrix::scalarDividedBy(const float scalar)
 
 /**
  * Copy data from host -> device (CPU -> GPU).
- * The transfer is synchronous (there is nothing to overlap with in the code).
+ * The host and device data share the same memory, so there is nothing to copy.
  */
 void BaseFloatMatrix::copyToDevice()
 {
-  cudaCheckErrors(cudaMemcpy(mDeviceData, mHostData, mCapacity * sizeof(float), cudaMemcpyHostToDevice));
+
 }// end of copyToDevice
 //----------------------------------------------------------------------------------------------------------------------
 
 /**
  * Copy data from device -> host (GPU -> CPU).
- * The transfer is synchronous (there is nothing to overlap with in the code).
+ * The host and device data share the same memory, so it is enough to wait until the GPU has finished.
  */
 void BaseFloatMatrix::copyFromDevice()
 {
-  cudaCheckErrors(cudaMemcpy(mHostData, mDeviceData, mCapacity * sizeof(float), cudaMemcpyDeviceToHost));
+  MetalContext::getInstance().synchronize();
 }// end of copyFromDevice
 //----------------------------------------------------------------------------------------------------------------------
 
@@ -117,25 +116,19 @@ void BaseFloatMatrix::copyFromDevice()
 
 /**
  * Memory allocation based on the capacity. \n
- * CPU memory is aligned at kDataAlignment, registered as pinned CUDA memory and zeroed.
+ * The memory is a Metal buffer shared by the CPU and the GPU (page aligned) and zeroed.
  */
 void BaseFloatMatrix::allocateMemory()
 {
   // Size of memory to allocate
   size_t sizeInBytes = mCapacity * sizeof(float);
 
-  // Allocate CPU memory
-  mHostData = static_cast<float*>(_mm_malloc(sizeInBytes, kDataAlignment));
-  if (!mHostData)
-  {
-    throw std::bad_alloc();
-  }
+  // Allocate memory shared by the CPU and the GPU
+  void* hostData = nullptr;
+  mDeviceData = static_cast<float*>(MetalContext::getInstance().allocate(sizeInBytes, hostData));
+  mHostData   = static_cast<float*>(hostData);
 
-  // Register Host memory (pin in memory)
-  cudaCheckErrors(cudaHostRegister(mHostData, sizeInBytes, cudaHostRegisterPortable));
-
-  // Allocate memory on the GPU
-  if ((cudaMalloc<float>(&mDeviceData, sizeInBytes) != cudaSuccess) || (!mDeviceData))
+  if ((!mDeviceData) || (!mHostData))
   {
     throw std::bad_alloc();
   }
@@ -149,19 +142,12 @@ void BaseFloatMatrix::allocateMemory()
  */
 void BaseFloatMatrix::freeMemory()
 {
-  // Free CPU memory
-  if (mHostData)
-  {
-    cudaHostUnregister(mHostData);
-    _mm_free(mHostData);
-  }
-  mHostData = nullptr;
-
-  // Free GPU memory
+  // Free memory shared by the CPU and the GPU
   if (mDeviceData)
   {
-    cudaCheckErrors(cudaFree(mDeviceData));
+    MetalContext::getInstance().deallocate(mDeviceData);
   }
+  mHostData   = nullptr;
   mDeviceData = nullptr;
 }// end of freeMemory
 //----------------------------------------------------------------------------------------------------------------------

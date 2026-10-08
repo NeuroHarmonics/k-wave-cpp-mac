@@ -30,7 +30,6 @@
  */
 
 #include <cmath>
-#include <immintrin.h>
 #include <limits>
 
 // Windows build needs to undefine macro MINMAX to support std::limits
@@ -47,6 +46,7 @@
 
 #include <Logger/Logger.h>
 #include <Parameters/Parameters.h>
+#include <Utils/MetalContext.h>
 
 //--------------------------------------------------------------------------------------------------------------------//
 //------------------------------------------------- Public methods ---------------------------------------------------//
@@ -117,10 +117,12 @@ void BaseOutputStream::postProcess()
  */
 void BaseOutputStream::allocateMemory()
 {
-  // Allocate memory on the host side
-  mHostBuffer = (float*) _mm_malloc(mBufferSize * sizeof(float), kDataAlignment);
+  // Allocate memory shared by the CPU and the GPU
+  void* hostBuffer = nullptr;
+  mDeviceBuffer = static_cast<float*>(MetalContext::getInstance().allocate(mBufferSize * sizeof(float), hostBuffer));
+  mHostBuffer   = static_cast<float*>(hostBuffer);
 
-  if (!mHostBuffer)
+  if ((!mHostBuffer) || (!mDeviceBuffer))
   {
     throw std::bad_alloc();
   }
@@ -170,29 +172,8 @@ void BaseOutputStream::allocateMemory()
     }//kMin
   }// switch
 
-  // Register Host memory (pin in memory only - no mapped data)
-  cudaCheckErrors(cudaHostRegister(mHostBuffer,
-                                   mBufferSize * sizeof (float),
-                                   cudaHostRegisterPortable | cudaHostRegisterMapped));
-  // cudaHostAllocWriteCombined - cannot be used since GPU writes and CPU reads
-
-  // Map host data to device memory (raw data) or allocate a data data (aggregated)
-  if (mReduceOp == ReduceOperator::kNone)
-  {
-    // Register CPU memory for zero-copy
-    cudaCheckErrors(cudaHostGetDevicePointer<float>(&mDeviceBuffer, mHostBuffer, 0));
-  }
-  else
-  {
-    // Allocate memory on the GPU side
-    if ((cudaMalloc<float>(&mDeviceBuffer, mBufferSize * sizeof (float))!= cudaSuccess) || (!mDeviceBuffer))
-    {
-      throw std::bad_alloc();
-    }
-
-    // If doing aggregation copy initialized arrays on GPU
-    copyToDevice();
-  }
+  // The GPU writes into the same memory, raw data is read by the CPU after the sampling event and aggregated data
+  // after the GPU has finished.
 }// end of allocateMemory
 //----------------------------------------------------------------------------------------------------------------------
 
@@ -201,19 +182,12 @@ void BaseOutputStream::allocateMemory()
  */
 void BaseOutputStream::freeMemory()
 {
-  // Free host buffer
-  if (mHostBuffer)
+  // Free memory shared by the CPU and the GPU
+  if (mDeviceBuffer)
   {
-    cudaHostUnregister(mHostBuffer);
-    _mm_free(mHostBuffer);
+    MetalContext::getInstance().deallocate(mDeviceBuffer);
   }
-  mHostBuffer = nullptr;
-
-  // Free GPU memory
-  if (mReduceOp != ReduceOperator::kNone)
-  {
-    cudaCheckErrors(cudaFree(mDeviceBuffer));
-  }
+  mHostBuffer   = nullptr;
   mDeviceBuffer = nullptr;
 }// end of FreeMemory
 //----------------------------------------------------------------------------------------------------------------------
@@ -223,7 +197,7 @@ void BaseOutputStream::freeMemory()
  */
 void BaseOutputStream::copyToDevice()
 {
-  cudaCheckErrors(cudaMemcpy(mDeviceBuffer, mHostBuffer, mBufferSize * sizeof(float), cudaMemcpyHostToDevice));
+  // The host and device buffers share the same memory, so there is nothing to copy.
 }// end of copyToDevice
 //----------------------------------------------------------------------------------------------------------------------
 
@@ -232,7 +206,8 @@ void BaseOutputStream::copyToDevice()
  */
 void BaseOutputStream::copyFromDevice()
 {
-  cudaCheckErrors(cudaMemcpy(mHostBuffer, mDeviceBuffer, mBufferSize * sizeof(float), cudaMemcpyDeviceToHost));
+  // The host and device buffers share the same memory, so it is enough to wait until the GPU has finished.
+  MetalContext::getInstance().synchronize();
 }// end of copyFromDevice
 //----------------------------------------------------------------------------------------------------------------------
 
