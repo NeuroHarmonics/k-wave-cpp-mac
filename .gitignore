@@ -1,3 +1,10 @@
+# Build outputs
 *.o
-/kspaceFirstOrder-OMP
-/ThirdParty/
+/kspaceFirstOrder-OMP/kspaceFirstOrder-OMP
+/kspaceFirstOrder-Metal/kspaceFirstOrder-Metal
+
+# Locally built libraries (build-fftw-macos.sh)
+ThirdParty/
+
+# Benchmark and test data
+*.h5
