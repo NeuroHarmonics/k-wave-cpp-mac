@@ -1,0 +1,52 @@
+name: Bug report
+description: A binary crashes, gives an error, or gives results that differ from the MATLAB solver
+body:
+  - type: dropdown
+    id: binary
+    attributes:
+      label: Binary
+      options:
+        - kspaceFirstOrder-OMP
+        - kspaceFirstOrder-Metal
+        - Both
+    validations:
+      required: true
+  - type: input
+    id: release
+    attributes:
+      label: Release
+      description: Release tag, or the commit if you built the binary yourself
+      placeholder: v1.3-macos
+    validations:
+      required: true
+  - type: input
+    id: mac
+    attributes:
+      label: Mac and macOS version
+      placeholder: MacBook Pro M3 Pro 36 GB, macOS 15.6
+    validations:
+      required: true
+  - type: input
+    id: kwave
+    attributes:
+      label: k-Wave and MATLAB versions
+      placeholder: k-Wave 1.4, MATLAB R2025b
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened
+      description: What you ran (the kspaceFirstOrder call or the binary command line) and what went wrong
+    validations:
+      required: true
+  - type: textarea
+    id: output
+    attributes:
+      label: Console output
+      description: The full output printed by the binary
+      render: text
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Script to reproduce
+      description: A small MATLAB script that shows the problem, if possible
+      render: matlab
