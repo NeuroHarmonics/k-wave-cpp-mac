@@ -69,7 +69,7 @@ The MATLAB scripts need k-Wave on the MATLAB path, or the environment variable `
 
 ## Issues and contributions
 
-Please report problems with the binaries using the [bug report form](https://github.com/NeuroHarmonics/k-wave-cpp-mac/issues/new/choose). Questions about using k-Wave are best asked on the [k-Wave forum](http://www.k-wave.org/forum). Pull requests are welcome, but the repository is not under active development.
+This repository covers the macOS ports only. Please report problems with the macOS binaries or builds using the [bug report form](https://github.com/NeuroHarmonics/k-wave-cpp-mac/issues/new/choose). Questions about using k-Wave, or about the C++ codes on Linux and Windows, are best asked on the [k-Wave forum](http://www.k-wave.org/forum). Pull requests for the macOS ports are welcome, but the repository is not under active development.
 
 ## Citing
 

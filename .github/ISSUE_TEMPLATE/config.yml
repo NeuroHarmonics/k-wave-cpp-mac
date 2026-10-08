@@ -2,4 +2,4 @@ blank_issues_enabled: false
 contact_links:
   - name: k-Wave forum
     url: http://www.k-wave.org/forum
-    about: Questions about using k-Wave, setting up simulations or interpreting results
+    about: Questions about using k-Wave, setting up simulations or interpreting results, and about the C++ codes on Linux and Windows

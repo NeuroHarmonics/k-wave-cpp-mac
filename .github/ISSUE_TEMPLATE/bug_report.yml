@@ -1,5 +1,5 @@
-name: Bug report
-description: A binary crashes, gives an error, or gives results that differ from the MATLAB solver
+name: macOS bug report
+description: A macOS binary from this repository crashes, gives an error, or gives results that differ from the MATLAB solver
 body:
   - type: dropdown
     id: binary
