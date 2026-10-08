@@ -1,7 +1,7 @@
 % Generate the benchmark input files bench_128.h5 and bench_256.h5 in the current folder.
 %
 % 3D heterogeneous, absorbing (y = 1.5), nonlinear medium, initial pressure source, one sensor plane, 200 time steps.
-% These are the inputs used for the baseline OpenMP timings in NOTES.md (bench_256.h5 is about 400 MB).
+% These are the inputs used for the timings in the README (bench_256.h5 is about 400 MB).
 %
 % Run with: /Applications/MATLAB_R2025b.app/bin/matlab -batch make_bench_inputs
 

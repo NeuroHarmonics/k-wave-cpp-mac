@@ -4,15 +4,17 @@
 % through the MATLAB solver and through the binary, then prints the maximum relative error. Single precision
 % round-off gives errors of around 1e-6 to 3e-6 (this is what the macOS OpenMP build achieves).
 %
-% Select the binary below (the OpenMP build by default). The binary is run through kspaceFirstOrder2DC / 3DC with
+% Select the binary with the environment variable KWAVE_BINARY (the OpenMP build by default). The binary is run through kspaceFirstOrder2DC / 3DC with
 % the BinaryName option (kspaceFirstOrder2DG / 3DG do the same with BinaryName = kspaceFirstOrder-CUDA).
 %
 % Run from the tests folder with: /Applications/MATLAB_R2025b.app/bin/matlab -batch compare_with_matlab
 
 addpath('/Users/btreeby/Documents/Local-Repos/k-wave/k-Wave');
 repo_dir = fileparts(fileparts(mfilename('fullpath')));
-bin_name = 'kspaceFirstOrder-OMP';
-% bin_name = 'kspaceFirstOrder-Metal';
+bin_name = getenv('KWAVE_BINARY');  % e.g. KWAVE_BINARY=kspaceFirstOrder-Metal matlab -batch compare_with_matlab
+if isempty(bin_name)
+    bin_name = 'kspaceFirstOrder-OMP';
+end
 bin_path = fullfile(repo_dir, bin_name);
 cpp_args = {'BinaryPath', bin_path, 'BinaryName', bin_name};
 common   = {'PlotSim', false, 'DataCast', 'single', 'PMLInside', false};
