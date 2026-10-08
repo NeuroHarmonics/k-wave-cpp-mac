@@ -33,6 +33,11 @@
   #include <omp.h>
 #endif
 
+// macOS build
+#ifdef __APPLE__
+  #include <sys/sysctl.h>
+#endif
+
 #include <exception>
 #include <stdexcept>
 #include <limits>
@@ -669,6 +674,19 @@ std::string Parameters::getProcessorName() const
 {
   std::string processorName = "";
 
+  // macOS build - the brand string is provided by sysctl on both Intel and Apple silicon
+  #ifdef __APPLE__
+    char brandString[256] = "";
+    size_t brandStringSize = sizeof(brandString);
+
+    if (sysctlbyname("machdep.cpu.brand_string", brandString, &brandStringSize, nullptr, 0) == 0)
+    {
+      processorName = brandString;
+    }
+
+    return processorName;
+  #endif
+
   // Processor registry
   using ProcessorRegistry = unsigned int[4];
   ProcessorRegistry regs{0 ,0, 0, 0};
@@ -745,7 +763,7 @@ void Parameters::incrementTimeIndex()
  */
 void Parameters::exportWisdom()
 {
-  #if (defined(__GNUC__) || defined(__GNUG__)) && !(defined(__clang__) || defined(__INTEL_COMPILER))
+  #if (defined(__GNUC__) || defined(__GNUG__)) && !defined(__INTEL_COMPILER)
     int success = fftwf_export_wisdom_to_filename(getWisdomFileName().c_str());
     if (success == 0)
     {
@@ -760,7 +778,7 @@ void Parameters::exportWisdom()
  */
 void Parameters::importWisdom()
 {
-  #if (defined(__GNUC__) || defined(__GNUG__)) && !(defined(__clang__) || defined(__INTEL_COMPILER))
+  #if (defined(__GNUC__) || defined(__GNUG__)) && !defined(__INTEL_COMPILER)
     int success = fftwf_import_wisdom_from_filename(getWisdomFileName().c_str());
     if (success == 0)
     {

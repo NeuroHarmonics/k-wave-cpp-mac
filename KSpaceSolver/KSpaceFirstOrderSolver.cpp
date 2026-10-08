@@ -29,8 +29,8 @@
  * If not, see [http://www.gnu.org/licenses/](http://www.gnu.org/licenses/).
  */
 
-// Linux build
-#ifdef __linux__
+// Linux and macOS build
+#if defined(__linux__) || defined(__APPLE__)
   #include <sys/resource.h>
 #endif
 
@@ -46,7 +46,7 @@
   #include <omp.h>
 #endif
 
-#include <immintrin.h>
+#include <Utils/AlignedMemory.h>
 #include <cmath>
 #include <ctime>
 #include <limits>
@@ -459,6 +459,14 @@ size_t KSpaceFirstOrderSolver::getMemoryUsage() const
     return memUsage.ru_maxrss >> 10;
   #endif
 
+  // macOS build (ru_maxrss is reported in bytes rather than kilobytes)
+  #ifdef __APPLE__
+    struct rusage memUsage;
+    getrusage(RUSAGE_SELF, &memUsage);
+
+    return memUsage.ru_maxrss >> 20;
+  #endif
+
   // Windows build
   #ifdef _WIN64
     HANDLE hProcess;
@@ -601,7 +609,11 @@ void KSpaceFirstOrderSolver::printFullCodeNameAndLicense() const
   #ifdef __linux__
     Logger::log(Logger::LogLevel::kBasic, kOutFmtLinuxBuild);
   #elif __APPLE__
-    Logger::log(Logger::LogLevel::kBasic, kOutFmtMacOsBuild);
+    #if (defined(__aarch64__) || defined(__arm64__))
+      Logger::log(Logger::LogLevel::kBasic, kOutFmtMacOsArmBuild);
+    #else
+      Logger::log(Logger::LogLevel::kBasic, kOutFmtMacOsBuild);
+    #endif
   #elif _WIN32
     Logger::log(Logger::LogLevel::kBasic, kOutFmtWindowsBuild);
   #endif
@@ -609,6 +621,9 @@ void KSpaceFirstOrderSolver::printFullCodeNameAndLicense() const
   // Compiler detections
   #if (defined(__GNUC__) || defined(__GNUG__)) && !(defined(__clang__) || defined(__INTEL_COMPILER))
     Logger::log(Logger::LogLevel::kBasic, kOutFmtGnuCompiler, __VERSION__);
+  #endif
+  #ifdef __clang__
+    Logger::log(Logger::LogLevel::kBasic, kOutFmtClangCompiler, __clang_version__);
   #endif
   #ifdef __INTEL_COMPILER
     Logger::log(Logger::LogLevel::kBasic, kOutFmtIntelCompiler, __INTEL_COMPILER);
@@ -635,6 +650,8 @@ void KSpaceFirstOrderSolver::printFullCodeNameAndLicense() const
     Logger::log(Logger::LogLevel::kBasic, kOutFmtSSE3);
   #elif (defined (__SSE2__))
     Logger::log(Logger::LogLevel::kBasic, kOutFmtSSE2);
+  #elif (defined (__ARM_NEON))
+    Logger::log(Logger::LogLevel::kBasic, kOutFmtNeon);
   #endif
 
   // Print license
@@ -783,7 +800,7 @@ void KSpaceFirstOrderSolver::initializeFftwPlans()
                                Hdf5File::canAccess(mParameters.getCheckpointFileName()));
 
   // If the GCC compiler with FFTW is used, try to import wisdom
-  #if (defined(__GNUC__) || defined(__GNUG__)) && !(defined(__clang__) || defined(__INTEL_COMPILER))
+  #if (defined(__GNUC__) || defined(__GNUG__)) && !defined(__INTEL_COMPILER)
     // Import system wide wisdom
     fftwf_import_system_wisdom();
 
@@ -1212,7 +1229,7 @@ void KSpaceFirstOrderSolver::writeOutputDataInfo()
  */
 void KSpaceFirstOrderSolver::writeCheckpointData()
 {
-  #if (defined(__GNUC__) || defined(__GNUG__)) && !(defined(__clang__) || defined(__INTEL_COMPILER))
+  #if (defined(__GNUC__) || defined(__GNUG__)) && !defined(__INTEL_COMPILER)
      Logger::log(Logger::LogLevel::kFull, kOutFmtStoringFftwWisdom);
      Logger::flush(Logger::LogLevel::kFull);
     // export FFTW wisdom

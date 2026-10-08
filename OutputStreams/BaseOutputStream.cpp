@@ -30,7 +30,7 @@
  */
 
 #include <cmath>
-#include <immintrin.h>
+#include <Utils/AlignedMemory.h>
 #include <limits>
 
 // Windows build needs to undefine macro MINMAX to support std::limits

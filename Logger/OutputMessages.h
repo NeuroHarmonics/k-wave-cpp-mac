@@ -32,8 +32,8 @@
 #ifndef OUTPUT_MESSAGES_H
 #define OUTPUT_MESSAGES_H
 
-// Linux build
-#ifdef __linux__
+// Linux and macOS build
+#if defined(__linux__) || defined(__APPLE__)
   #include <Logger/OutputMessagesLinux.h>
 #endif
 
@@ -206,10 +206,16 @@ OutputMessage kOutFmtWindowsBuild
 /// Print version output message.
 OutputMessage kOutFmtMacOsBuild
   = kOutFmtVerticalLine + " Operating system: Mac OS X x64                                " + kOutFmtEol;
+/// Print version output message.
+OutputMessage kOutFmtMacOsArmBuild
+  = kOutFmtVerticalLine + " Operating system: macOS arm64                                 " + kOutFmtEol;
 
 /// Print version output message.
 OutputMessage kOutFmtGnuCompiler
   = kOutFmtVerticalLine + " Compiler name:    GNU C++ %.19s                               " + kOutFmtEol;
+/// Print version output message.
+OutputMessage kOutFmtClangCompiler
+  = kOutFmtVerticalLine + " Compiler name:    Clang %-38.38s" + kOutFmtEol;
 /// Print version output message.
 OutputMessage kOutFmtIntelCompiler
   = kOutFmtVerticalLine + " Compiler name:    Intel C++ %d                              " + kOutFmtEol;
@@ -238,6 +244,9 @@ OutputMessage kOutFmtSSE3
 /// Print version output message.
 OutputMessage kOutFmtSSE2
   = kOutFmtVerticalLine + " Instruction set:  Intel SSE 2                                 " + kOutFmtEol;
+/// Print version output message.
+OutputMessage kOutFmtNeon
+  = kOutFmtVerticalLine + " Instruction set:  Arm NEON                                    " + kOutFmtEol;
 
 //--------------------------------------------------- Medium types ---------------------------------------------------//
 /// Output message - medium type.

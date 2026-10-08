@@ -33,9 +33,11 @@
 
 ################################################################################
 #                                                                              #
-# The source codes can be compiled ONLY under Linux x64 by GNU g++ 6.0 and     #
+# The source codes can be compiled under Linux x64 by GNU g++ 6.0 and          #
 # newer, or Intel Compiler icpc 2018 and newer. The newer the compiler, the    #
 # more advanced instruction set can be used.                                   #
+# On macOS, Apple Clang with Homebrew FFTW, HDF5 and libomp is used            #
+# automatically (brew install fftw hdf5 libomp).                               #
 # We recommend compilation with g++ 8.3 or icpc 2019.                          #
 #                                                                              #
 # This makefile uses the GNU compiler and static linking by default.           #
@@ -71,9 +73,14 @@
 #         Set following flags based on your compiler and library paths         #
 ################################################################################
 
-# Select compiler. GNU is default but Intel may be faster.
-COMPILER = GNU
-#COMPILER = Intel
+# Select compiler. GNU is default on Linux but Intel may be faster.
+# On macOS, Apple Clang with Homebrew libraries is selected automatically.
+ifeq ($(shell uname -s), Darwin)
+  COMPILER = Clang
+else
+  COMPILER = GNU
+  #COMPILER = Intel
+endif
 
 # Static lining is default
  LINKING = STATIC
@@ -94,19 +101,19 @@ SZIP_DIR = $(EBROOTSZIP)
 # The native architecture will compile and optimize the code for the underlying 
 # processor.
 # Fat binary, available only for Intel, includes all AVX, AVX2 and AVX512 sets.
+# ARM64, available only for Clang on macOS, runs on all Apple silicon (M1 and newer).
 
 CPU_ARCH = native
 #CPU_ARCH = AVX
 #CPU_ARCH = AVX2
 #CPU_ARCH = AVX512
 #CPU_ARCH = FAT_BIN
+#CPU_ARCH = ARM64
 
 ############################### Common flags ###################################
 # Git hash of release 1.3
 GIT_HASH       = -D__KWAVE_GIT_HASH__=\"0ba023063e3f29685e1e346f56883378d961f9f1\"
 
-# Replace tabs by spaces
-.RECIPEPREFIX += 
 
 ################################ GNU g++ + FFTW ################################
 ifeq ($(COMPILER), GNU)
@@ -268,6 +275,105 @@ ifeq ($(COMPILER), Intel)
   endif
 endif
 
+######################## Apple Clang + FFTW (macOS) ############################
+# Install the libraries by: brew install fftw hdf5 libomp
+# For the best performance, build FFTW with SIMD support by: ./build-fftw-macos.sh
+# (the Homebrew FFTW is built without NEON on Apple silicon).
+ifeq ($(COMPILER), Clang)
+  # Library paths (Homebrew), FFTW from ThirdParty/fftw is preferred if present
+  BREW_DIR  = $(shell brew --prefix)
+  ifneq ($(wildcard ThirdParty/fftw/lib/libfftw3f.a),)
+    FFT_DIR = ThirdParty/fftw
+  else
+    FFT_DIR = $(BREW_DIR)/opt/fftw
+    ifeq ($(shell uname -m), arm64)
+      $(warning Using Homebrew FFTW without NEON support, run ./build-fftw-macos.sh for faster FFTs)
+    endif
+  endif
+  HDF5_DIR  = $(BREW_DIR)/opt/hdf5
+  SZIP_DIR  = $(BREW_DIR)/opt/libaec
+  OMP_DIR   = $(BREW_DIR)/opt/libomp
+
+  # Compiler name
+  CXX       = clang++
+
+  # C++ standard
+  CPP_STD   = -std=c++11
+
+  # Enable OpenMP (Apple Clang needs the external libomp runtime)
+  OPENMP    = -Xpreprocessor -fopenmp
+
+  # Set CPU architecture
+  # Intel Macs
+  ifeq ($(CPU_ARCH), AVX)
+    CPU_FLAGS = -arch x86_64 -mavx
+
+  else ifeq ($(CPU_ARCH), AVX2)
+    CPU_FLAGS = -arch x86_64 -mavx2 -mfma
+
+  else ifeq ($(CPU_ARCH), AVX512)
+    CPU_FLAGS = -arch x86_64 -mavx512f
+
+  # Apple silicon - portable binary for M1 and newer
+  else ifeq ($(CPU_ARCH), ARM64)
+    CPU_FLAGS = -arch arm64 -mcpu=apple-m1
+
+  # Default is native - the max performance for this CPU
+  else
+    CPU_FLAGS = -mcpu=native
+  endif
+
+  # Use maximum optimization. Finite math must stay off since Clang would otherwise remove the infinity checks
+  # in the absorption operators (KSpaceFirstOrderSolver::generateKappaAndNablas).
+  OPT       = -O3 -ffast-math -fno-finite-math-only
+
+  # Debug flags
+  DEBUG     =
+  # Profile flags
+  PROFILE   =
+  # C++ warning flags
+  WARNING   = -Wall -Wno-pass-failed
+
+  # Add include directories
+  INCLUDES  = -I$(HDF5_DIR)/include -I$(FFT_DIR)/include -I$(OMP_DIR)/include -I.
+  # Add library directories
+  LIB_PATHS = -L$(HDF5_DIR)/lib -L$(FFT_DIR)/lib -L$(SZIP_DIR)/lib -L$(OMP_DIR)/lib
+
+  # Set compiler flags and header files directories
+  CXXFLAGS  = $(CPU_FLAGS) $(OPT) $(DEBUG) $(WARNING) $(PROFILE) \
+              $(OPENMP) $(CPP_STD)                               \
+              $(GIT_HASH)                                        \
+              $(INCLUDES)
+
+  # Set linker flags and library files directories
+  ifeq ($(LINKING), STATIC)
+        # Static link of all non-system libraries (macOS does not support fully static binaries).
+        # The resulting binary only depends on libSystem, libc++ and libz shipped with macOS.
+        LDFLAGS = $(CPU_FLAGS) $(DEBUG) $(WARNING) $(PROFILE) \
+                  $(CPP_STD)                                  \
+                  $(LIB_PATHS)
+
+        LDLIBS  = $(FFT_DIR)/lib/libfftw3f_omp.a \
+                  $(FFT_DIR)/lib/libfftw3f.a     \
+                  $(HDF5_DIR)/lib/libhdf5_hl.a   \
+                  $(HDF5_DIR)/lib/libhdf5.a      \
+                  $(SZIP_DIR)/lib/libsz.a        \
+                  $(SZIP_DIR)/lib/libaec.a       \
+                  $(OMP_DIR)/lib/libomp.a        \
+                  -lz -lm
+
+    else
+        # Dynamic link with runtime paths
+        LDFLAGS = $(CPU_FLAGS) $(OPT) $(DEBUG) $(WARNING) $(PROFILE) \
+                  $(CPP_STD)                                         \
+                  $(LIB_PATHS)                                       \
+                  -Wl,-rpath,$(HDF5_DIR)/lib -Wl,-rpath,$(FFT_DIR)/lib \
+                  -Wl,-rpath,$(OMP_DIR)/lib
+
+        LDLIBS  = -lfftw3f_omp -lfftw3f -lhdf5_hl -lhdf5 -lomp -lm -lz
+  endif
+endif
+
 ################################### Build ######################################
 # Target binary name
 TARGET       = kspaceFirstOrder-OMP
@@ -299,13 +405,13 @@ all: $(TARGET)
 
 # Link target
 $(TARGET): $(DEPENDENCIES)
-  $(CXX) $(LDFLAGS) $(DEPENDENCIES) $(LDLIBS) -o $@
+	$(CXX) $(LDFLAGS) $(DEPENDENCIES) $(LDLIBS) -o $@
 
 # Compile units
 %.o: %.cpp
-  $(CXX) $(CXXFLAGS) -o $@ -c $<
+	$(CXX) $(CXXFLAGS) -o $@ -c $<
 
 # Clean repository
 .PHONY: clean
 clean:
-  rm -f $(DEPENDENCIES) $(TARGET)
+	rm -f $(DEPENDENCIES) $(TARGET)

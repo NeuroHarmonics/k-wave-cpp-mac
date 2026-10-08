@@ -29,7 +29,7 @@
  * If not, see [http://www.gnu.org/licenses/](http://www.gnu.org/licenses/).
  */
 
-#include <immintrin.h>
+#include <Utils/AlignedMemory.h>
 #include <assert.h>
 
 #include <MatrixClasses/BaseFloatMatrix.h>
