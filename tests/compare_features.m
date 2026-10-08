@@ -15,7 +15,10 @@
 %
 % Run from the tests folder with: /Applications/MATLAB_R2025b.app/bin/matlab -batch compare_features
 
-addpath('/Users/btreeby/Documents/Local-Repos/k-wave/k-Wave');
+% k-Wave must be on the MATLAB path, or set KWAVE_PATH to the k-Wave toolbox folder (the one holding kspaceFirstOrder3D.m)
+if ~isempty(getenv('KWAVE_PATH'))
+    addpath(getenv('KWAVE_PATH'));
+end
 repo_dir = fileparts(fileparts(mfilename('fullpath')));
 binaries = {'kspaceFirstOrder-OMP', 'kspaceFirstOrder-Metal'};
 common   = {'PlotSim', false, 'DataCast', 'single', 'PMLInside', false, 'PMLSize', 10};

@@ -5,7 +5,10 @@
 %
 % Run with: /Applications/MATLAB_R2025b.app/bin/matlab -batch make_bench_inputs
 
-addpath('/Users/btreeby/Documents/Local-Repos/k-wave/k-Wave');
+% k-Wave must be on the MATLAB path, or set KWAVE_PATH to the k-Wave toolbox folder (the one holding kspaceFirstOrder3D.m)
+if ~isempty(getenv('KWAVE_PATH'))
+  addpath(getenv('KWAVE_PATH'));
+end
 for N = [128 256]
   clear medium source sensor
   kgrid = kWaveGrid(N, 1e-4, N, 1e-4, N, 1e-4);

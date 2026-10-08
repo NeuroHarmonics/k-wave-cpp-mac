@@ -15,7 +15,7 @@ This folder started as the unchanged k-Wave 1.3 CUDA code (commit `22376b1`). Ru
 ## Things that are easy to break
 
 - **Nyquist frequency in the shifted velocity.** The half cell shift makes the Nyquist frequency of even sized dimensions imaginary. cuFFT ignores that imaginary part in complex to real transforms, VkFFT does not, so the shift kernels zero it. Without this, `u_non_staggered` and intensity are wrong by up to 10 percent on even grids.
-- **VkFFT coalescing.** `createPlan` tries `coalescedMemory` of 32, 16 and 8 bytes and keeps the first that does every axis in one pass. The default splits the y axis of 2D grids of 1536^2 and more into two passes, which is 25 to 35 percent slower.
+- **VkFFT coalescing.** `createPlan` tries the default `coalescedMemory`, then 16 and 8 bytes, and keeps the first that does every axis in one pass. The default splits the y axis of 2D grids of 1536^2 and more into two passes, which is 25 to 35 percent slower.
 - **VkFFT launch offsets.** `specifyOffsetsAtLaunch` generates invalid Metal code in VkFFT 1.3.4, so FFT buffers must start at offset 0 (checked in `executePlan`).
 - **`vkFFT.h`** defines the metal-cpp implementation, so it is included in `CufftComplexMatrix.cpp` only.
 - **Device constants and matrix indices** exist twice: `Parameters/CudaDeviceConstants.cuh` and `Utils/CudaUtils.metal`, and `MatrixContainer::MatrixIdx` and `MI`. A `static_assert` checks the number of matrices, the rest must be kept in sync by hand.
