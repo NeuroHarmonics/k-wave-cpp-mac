@@ -65,6 +65,16 @@ Use `CPU_ARCH=ARM64` for binaries that run on all Apple silicon Macs (the defaul
 
 `tests/compare_with_matlab.m` runs 2D and 3D simulations through the MATLAB solver and through a binary (select it with the environment variable `KWAVE_BINARY`) and prints the maximum relative difference, which should be around 1e-6 to 3e-6. `tests/compare_features.m` covers all sensor outputs, source types and absorption models and runs both binaries side by side. `tests/make_bench_inputs.m` and `tests/bench.sh` create benchmark inputs and time a binary.
 
+The MATLAB scripts need k-Wave on the MATLAB path, or the environment variable `KWAVE_PATH` set to the k-Wave toolbox folder.
+
+## Issues and contributions
+
+Please report problems with the binaries using the [bug report form](https://github.com/NeuroHarmonics/k-wave-cpp-mac/issues/new/choose). Questions about using k-Wave are best asked on the [k-Wave forum](http://www.k-wave.org/forum). Pull requests are welcome, but the repository is not under active development.
+
+## Citing
+
+If you use these codes in your work, please cite the k-Wave papers listed on the [k-Wave website](http://www.k-wave.org) (also in `CITATION.cff`).
+
 ## License
 
-The k-Wave codes are distributed under the GNU Lesser General Public License, see `License.md` in each folder.
+The k-Wave codes are distributed under the GNU Lesser General Public License version 3, see `LICENSE` and `License.md` in each folder. The release binaries link third party libraries statically, see `THIRD_PARTY_NOTICES.md` and the `licenses` folder. The OpenMP binary includes FFTW, which is licensed under the GNU General Public License, so that binary as a whole is distributed under the GPL.
