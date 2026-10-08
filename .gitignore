@@ -1,5 +1,11 @@
+# macOS Finder
+.DS_Store
+
 # Build outputs
 *.o
+*.d
+/kspaceFirstOrder-Metal/Utils/MetalKernelsSource.cpp
+/tools/fftbench
 /kspaceFirstOrder-OMP/kspaceFirstOrder-OMP
 /kspaceFirstOrder-Metal/kspaceFirstOrder-Metal
 
